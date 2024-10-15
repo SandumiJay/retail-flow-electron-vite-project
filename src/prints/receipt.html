@@ -1,0 +1,50 @@
+b<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 80mm; /* Adjust for receipt printer width */
+      margin: 0;
+      padding: 0;
+    }
+    .receipt {
+      text-align: center;
+    }
+    .header {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .content {
+      margin-bottom: 10px;
+    }
+    .footer {
+      font-size: 0.8em;
+      margin-top: 10px;
+      border-top: 1px dashed #000;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="header">
+      <h2>Store Name</h2>
+      <p>Address Line 1</p>
+      <p>Address Line 2</p>
+    </div>
+    <div class="content">
+      <p>Date: <span id="date"></span></p>
+      <p>Time: <span id="time"></span></p>
+      <table id="items">
+        <!-- Items will be inserted here -->
+      </table>
+    </div>
+    <div class="footer">
+      <p>Thank you for shopping with us!</p>
+    </div>
+  </div>
+</body>
+</html>
