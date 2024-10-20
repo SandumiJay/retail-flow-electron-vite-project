@@ -1,11 +1,11 @@
 import {
   Badge,
-  Button, 
+  Button,
   FileInput,
   Flex,
   Group,
   Image,
-  Modal, 
+  Modal,
   Select,
   Table,
   TextInput,
@@ -16,12 +16,13 @@ import axios from "axios";
 import API_ENPOINTS from "../../API";
 import {
   IconEdit,
-  IconEditCircle, 
+  IconEditCircle,
   IconSquareRoundedPlus,
   IconTrashX,
 } from "@tabler/icons-react";
 
 interface Product {
+  id: number;
   sku: string;
   productName: string;
   category: string;
@@ -32,33 +33,23 @@ interface Product {
 }
 
 interface Category {
-  id: number; // Assuming categories have an ID
+  id: number;
   Category: string;
   status: number;
-  // Add other properties if needed
 }
+
 const Products: React.FC = () => {
   const [viewAddItem, setViewAddItem] = React.useState(false);
   const [viewEditItem, setViewEditItem] = React.useState(false);
   const [viewDelete, setViewDelete] = React.useState(false);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  
-  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
-    null
-  );
-  const [productCategories, setProductCategories] = React.useState<string[]>(
-    []
-  );
-
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [productCategories, setProductCategories] = React.useState<string[]>([]);
   const [productTblRows, setProductTblRows] = React.useState<JSX.Element[]>([]);
-
   const [products, setProducts] = React.useState<Product[]>([]);
-
-  const [editingProduct, setEditingProduct] = React.useState<Product | null>(
-    null
-  );
-  const [originalImage, setOriginalImage] = React.useState<string | null>(null); // To track original image
+  const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
+  const [originalImage, setOriginalImage] = React.useState<string | null>(null);
 
   const loadProducts = async () => {
     try {
@@ -73,42 +64,29 @@ const Products: React.FC = () => {
       console.error("Error loading products:", error);
     }
   };
+
   const loadProductCategories = async () => {
     try {
       const response = await axios.get(API_ENPOINTS.GET_PRODUCT_CATEGORIES);
-      console.log(response.data);
-      if (Array.isArray(response.data)) {
-        const categoriesList = response.data.map(
-          (category: Category) => category.Category
-        );
-        console.log("categoriesList");
-        console.log(categoriesList);
-        setProductCategories(categoriesList);
-      } else if (
-        response.data.categories &&
-        Array.isArray(response.data.categories)
-      ) {
-        const categoriesList = response.data.categories.map(
-          (category: Category) => category.Category
-        );
-        console.log(categoriesList);
+  
+      // Ensure response is valid and contains the expected structure
+      if (response.status === 200 && response.data.success && Array.isArray(response.data.data)) {
+        const categoriesList = response.data.data.map((category: Category) => category.Category);
         setProductCategories(categoriesList);
       } else {
         console.error("Unexpected data format:", response.data);
       }
-    } catch (error) {
-      console.error("Error loading product categories:", error);
+    } catch (error: any) {
+      console.error("Error loading product categories:", error.message || error);
     }
   };
+  
 
   const hasImageChanged = () => {
-    console.log("hasImageChanged");
-    const hh = selectedFile !== null || imagePreview !== originalImage;
-    console.log(hh);
     return selectedFile !== null || imagePreview !== originalImage;
   };
+
   const form = useForm({
-    mode: "uncontrolled",
     initialValues: {
       procode: "",
       proname: "",
@@ -118,9 +96,7 @@ const Products: React.FC = () => {
       cost: 0,
     },
     validate: {
-      
       proname: (value) => (value ? null : "Product name is required"),
-      //cost: (value) => (typeof value === "number" && value > 0 ? null : value+"Cost must be a positive number"+(typeof value)),
     },
   });
 
@@ -139,18 +115,10 @@ const Products: React.FC = () => {
   };
 
   const handleUpdateProduct = async (values: typeof form.values) => {
-    console.log("handleUpdateProduct");
-    console.log(values);
     const { procode, proname, category, quantity, price, cost } = values;
-    const numericCost = parseFloat(cost);
-    console.log("cost value")
-    console.log(cost)
-    // Create FormData to handle file upload
-    const formData = new FormData();
-    formData.append("image", selectedFile);
+    let imageUrl = originalImage;
+
     try {
-      console.log("handleUpdateProduct ff");
-      let imageUrl = originalImage;
       if (hasImageChanged() && selectedFile) {
         const formData = new FormData();
         formData.append("image", selectedFile);
@@ -158,14 +126,11 @@ const Products: React.FC = () => {
         const uploadResponse = await axios.post(
           API_ENPOINTS.UPLOAD_PRODUCT_IMAGE,
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
-        imageUrl = uploadResponse.data.url; // Get the uploaded image URL
+        imageUrl = uploadResponse.data.url;
       }
-      // Update product with image URL
-      console.log("handleUpdateProduct 2");
+
       await axios.put(API_ENPOINTS.UPDATE_PRODUCT, {
         sku: procode,
         name: proname,
@@ -175,48 +140,38 @@ const Products: React.FC = () => {
         cost,
         image: imageUrl,
       });
-      // Reset form and close modal
+
       form.reset();
       setViewEditItem(false);
       setImagePreview(null);
       loadProducts();
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
-   
   const handleAddProduct = async (values: typeof form.values) => {
-    console.log("handleAddProduct triggered");
-  
     const { procode, proname, category, quantity, price, cost } = values;
-    
-    let imageUrl = ""; // Define imageUrl in the outer scope
-    
+    let imageUrl = "";
+
     if (selectedFile) {
-      // Create FormData to handle file upload
       const formData = new FormData();
       formData.append("image", selectedFile);
-  
+
       try {
-        // Upload the image
         const uploadResponse = await axios.post(
           API_ENPOINTS.UPLOAD_PRODUCT_IMAGE,
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
-        imageUrl = uploadResponse.data.url; // Assign the uploaded image URL
-        console.log("Image uploaded successfully:", imageUrl);
+        imageUrl = uploadResponse.data.url;
       } catch (error) {
         console.error("Error uploading image:", error);
-        return; // Stop further execution if image upload fails
+        return;
       }
     }
-  
+
     try {
-      // Add product with the image URL if available
       await axios.post(API_ENPOINTS.ADD_PRODUCT, {
         sku: procode,
         name: proname,
@@ -224,23 +179,18 @@ const Products: React.FC = () => {
         quantity,
         price,
         cost,
-        image: imageUrl || "", // Use imageUrl or an empty string if no image is provided
+        image: imageUrl || "",
       });
-  
-      // Reset form and close modal
+
       form.reset();
       setViewAddItem(false);
       setImagePreview(null);
       setSelectedFile(null);
-  
-      // Optionally, reload the products list
       loadProducts();
-      console.log("Product added successfully");
     } catch (error) {
       console.error("Error saving product:", error);
     }
   };
-  
 
   const handleEditViewModal = (product: Product) => {
     setViewEditItem(true);
@@ -261,62 +211,38 @@ const Products: React.FC = () => {
     setViewDelete(true);
     setSelectedProduct(product);
   };
+
   useEffect(() => {
+    console.log("Products state updated:", products); 
     const rows = products.map((product) => (
-      <Table.Tr key={product.sku} style={{ border: "1px solid #dee2e6" }}>
-        <Table.Td style={{ textAlign: "left", padding: "10px" }}>
-          {product.sku}
-        </Table.Td>
-        <Table.Td style={{ textAlign: "left", padding: "10px" }}>
-          {product.productName}
-        </Table.Td>
-        <Table.Td style={{ textAlign: "left", padding: "10px" }}>
+      <tr key={product.sku} style={{ border: "1px solid #dee2e6" }}>
+        <td style={{ textAlign: "left", padding: "10px" }}>{product.sku}</td>
+        <td style={{ textAlign: "left", padding: "10px" }}>{product.productName}</td>
+        <td style={{ textAlign: "left", padding: "10px" }}>
           {product.image ? (
-            <Image
-              radius="md"
-              h={50}
-              w="auto"
-              fit="contain"
-              src={product.image}
-              style={{ border: "1px solid #dee2e6" }}
-            />
+            <Image radius="md" height={50} fit="contain" src={product.image} style={{ border: "1px solid #dee2e6" }} />
           ) : (
             <Badge color="gray">No Image</Badge>
           )}
-        </Table.Td>
-        <Table.Td style={{ textAlign: "left", padding: "10px" }}>
-          {product.category}
-        </Table.Td>
-        <Table.Td style={{ textAlign: "right", padding: "10px" }}>
-          {product.intQty}
-        </Table.Td>
-        <Table.Td style={{ textAlign: "right", padding: "10px" }}>
-          ${product.cost.toFixed(2)}
-        </Table.Td>
-
-        <Table.Td style={{ textAlign: "right", padding: "10px" }}>
-          ${product.price.toFixed(2)}
-        </Table.Td>
-        <Table.Td
-          style={{
-            display: "flex",
-            gap: "5px",
-            justifyContent: "end",
-            padding: "10px",
-          }}
-        >
-          <Button onClick={() => handleEditViewModal(product)}>
-            <IconEdit />
-          </Button>
-          <Button color="red" onClick={() => hadleDeleteConfirm(product)}>
-            <IconTrashX />
-          </Button>
-        </Table.Td>
-      </Table.Tr>
+        </td>
+        <td style={{ textAlign: "left", padding: "10px" }}>{product.category}</td>
+        <td style={{ textAlign: "right", padding: "10px" }}>{product.intQty}</td>
+        <td style={{ textAlign: "right", padding: "10px" }}>${product.cost.toFixed(2)}</td>
+        <td style={{ textAlign: "right", padding: "10px" }}>${product.price.toFixed(2)}</td>
+        <td style={{ display: "flex", gap: "5px", justifyContent: "end", padding: "10px" }}>
+          <Button onClick={() => handleEditViewModal(product)}><IconEdit /></Button>
+          <Button color="red" onClick={() => hadleDeleteConfirm(product)}><IconTrashX /></Button>
+        </td>
+      </tr>
     ));
 
     setProductTblRows(rows);
   }, [products]);
+
+  useEffect(() => {
+    loadProductCategories();
+    loadProducts();
+  }, []);
 
   const headers = (
     <Table.Tr>
@@ -331,24 +257,19 @@ const Products: React.FC = () => {
     </Table.Tr>
   );
 
-  useEffect(() => {
-    loadProductCategories();
-    loadProducts();
-  }, []);
 
   const handleDeleteProceed = async () => {
     try {
       await axios.delete(`${API_ENPOINTS.DELETE_PRODUCT}`, {
-        params: {
-          product: selectedProduct,
-        },
+        data: { id: selectedProduct?.id }  // Send the product ID in the request body
       });
       setViewDelete(false);
       loadProducts();
     } catch (error) {
-      console.log(error);
+      console.error("Error deleting product:", error);
     }
   };
+  
   return (
     <div>
       <Modal
@@ -556,7 +477,7 @@ const Products: React.FC = () => {
       <Flex justify="space-between" align="center">
         <h4>Products</h4>
         <Button onClick={() => setViewAddItem(true)} color="green">
-          <IconSquareRoundedPlus />
+          Add New Product 
         </Button>
       </Flex>
       <Table striped highlightOnHover>

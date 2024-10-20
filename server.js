@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { console } from "inspector";
 dotenv.config(); // Load environment variables from a .env file
 
 const app = express();
@@ -121,18 +122,30 @@ app.post("/api/create-product-category", async (req, res) => {
 
 app.get("/api/get-product-categories", async (req, res) => {
   try {
-    // Query the database for all product categories
-    const [rows] = await pool.query(
-      "SELECT * FROM productcategories group by Category"
+    // Query the database for all unique product categories
+    const [categories] = await pool.query(
+      "SELECT DISTINCT id,Category,Status FROM productcategories group by id,Category,Status"
     );
+    console.log(categories);
+    // Check if categories are found
+    if (categories.length === 0) {
+      return res.status(404).json({ message: "No categories found" });
+    }
 
     // Return the list of categories in the response
     res.status(200).json({
-      categories: rows,
+      success: true,
+      data: categories,
     });
   } catch (error) {
-    console.error("Error retrieving categories:", error);
-    res.status(500).json({ message: "Internal server error" });
+    // Improved error logging with specific message
+    console.error("Database query error while retrieving categories:", error);
+
+    // Return a more informative error message
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve product categories. Please try again later.",
+    });
   }
 });
 
@@ -214,30 +227,40 @@ app.delete("/api/delete-product-category", async (req, res) => {
 app.post("/api/add-product", async (req, res) => {
   try {
     // Extract product data from req.body
-    const { name, category, quantity, price, image } = req.body;
+    const { name, category, quantity, cost, price, image } = req.body;
 
+    // Input validation
     if (!name) {
       return res.status(400).json({ message: "Product name is required" });
     }
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
     }
-    if (!quantity) {
+    if (quantity === undefined || quantity === null) {
       return res.status(400).json({ message: "Quantity is required" });
     }
-    if (!price) {
+    if (isNaN(quantity) || quantity < 0) {
+      return res.status(400).json({ message: "Quantity must be a non-negative number" });
+    }
+    if (cost === undefined || cost === null) {
+      return res.status(400).json({ message: "Cost is required" });
+    }
+    if (price === undefined || price === null) {
       return res.status(400).json({ message: "Price is required" });
     }
+    if (isNaN(price) || price < 0) {
+      return res.status(400).json({ message: "Price must be a non-negative number" });
+    }
 
+    // Generate SKU and insert product data into the database
     const sku = await generateEntryCode(1);
-    // Insert product data into the database
     const [result] = await pool.query(
-      "INSERT INTO products (sku, productName, category, intQty, price, image) VALUES (?, ?, ?, ?, ?, ?)",
-      [sku, name, category, quantity, price, image]
+      "INSERT INTO products (sku, productName, category, intQty,cost, price, image) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [sku, name, category, quantity,cost, price, image]
     );
 
     // Return success response with inserted product details
-    res.status(200).json({
+    res.status(201).json({
       message: "Product added successfully",
       product: {
         id: result.insertId,
@@ -245,15 +268,19 @@ app.post("/api/add-product", async (req, res) => {
         name,
         category,
         quantity,
+        cost,
         price,
         image,
       },
     });
   } catch (error) {
+    // Log the error for debugging
+    console.error("Error adding product:", error);
     // Handle any errors
-    res.status(500).json({ message: "Error adding product", error });
+    res.status(500).json({ message: "Error adding product", error: error.message });
   }
 });
+
 
 app.get("/api/get-users", upload.single("image"), async (req, res) => {
   try {
@@ -293,20 +320,39 @@ app.get("/api/get-products", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+// app.delete("/api/delete-product", async (req, res) => {
+//   try {
+//     const { product } = req.body; // Ensure product is sent in the body
+//     console.log("Product to delete:", product); // Log the product to delete
+
+//     // Your deletion logic goes here
+//     await pool.query("DELETE FROM products WHERE id = ?", [product.id]);
+//     res.status(200).json(product.id )
+//     res.status(200).json({ message: product.id + " Product deleted successfully" });
+//   } catch (error) {
+//     console.error("Error deleting product:", error);
+//     res.status(500).json({ message:  error});
+//   }
+// });
+
 app.delete("/api/delete-product", async (req, res) => {
   try {
-    const { product } = req.query; // Access the query parameter
-    console.log("Product to delete:", product);
+    const { id } = req.body;  // Get the product ID from the request body
+    console.log("Deleting product with ID:", id);
 
-    // Your deletion logic goes here
-    await pool.query("DELETE FROM products WHERE sku = ?", [product.sku]);
+    // Perform the deletion
+    await pool.query("DELETE FROM products WHERE id = ?", [id]);
+    await pool.query("commit");
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json({ message: "Product deleted successfully", id });
   } catch (error) {
     console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Failed to delete product" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
+
 app.put("/api/update-product", async (req, res) => {
   const { sku, name, category, quantity, price, cost, image } = req.body;
 
@@ -393,12 +439,37 @@ app.post("/api/delete-supplier", async (req, res) => {
   }
 });
 
+app.post("/api/delete-purchase-order", async (req, res) => {
+  try {
+    const { poCode } = req.body;  // Get purchase order code from URL parameters
+    console.log(poCode)
+
+    if (!poCode) {
+      return res.status(400).json({ message: "Missing purchase order code (poCode)" });
+    }
+
+    // Logging details for debugging
+    console.log("Received purchase order code to delete: ", poCode);
+
+    // Delete from related tables
+    console.log("DELETE FROM purchaseorderdetails WHERE poCode = ", poCode);
+    await pool.query("DELETE FROM purchaseorderdetails WHERE poCode = ?", [poCode]);
+    await pool.query("DELETE FROM purchaseorder WHERE purchaseOrderCode = ?", [poCode]);
+
+    res.status(200).json({ message: "Purchase order and details deleted successfully." });
+
+  } catch (error) {
+    console.error("Error deleting purchase order:", error);
+    res.status(500).json({ message: "Error deleting purchase order" });
+  }
+});
+
 app.post("/api/add-supplier", async (req, res) => {
   const { code, name, email, phone, address, city, country } = req.body;
   const missingFields = [];
 
   // Check each field and push missing fields to the array
-  // if (!code) missingFields.push("code");
+  if (!code) missingFields.push("code");
   if (!name) missingFields.push("name");
   if (!email) missingFields.push("email");
   if (!phone) missingFields.push("phone");
@@ -413,20 +484,31 @@ app.post("/api/add-supplier", async (req, res) => {
     });
   }
 
-  const EntryCode = await generateEntryCode(2);
-  console;
+  // Generate Entry Code
+  let EntryCode;
+  try {
+    EntryCode = await generateEntryCode(2);  // Assuming this function exists
+  } catch (error) {
+    return res.status(500).json({ message: "Error generating entry code" });
+  }
+
   try {
     const [result] = await pool.query(
       "INSERT INTO suppliers (code, name, email, phone, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [EntryCode, name, email, phone, address, city, country]
     );
 
-    res.status(200).json({
+    // Return success response
+    return res.status(200).json({
       message: "Supplier added successfully",
-      supplier: result.insertId,
+      supplierId: result.insertId,
     });
   } catch (error) {
     console.error("Error adding supplier:", error);
+    return res.status(500).json({
+      message: "Error adding supplier",
+      error: error.message,  // You can omit the detailed error message in production for security reasons
+    });
   }
 });
 
@@ -546,7 +628,7 @@ app.post("/api/create-purchase-order", async (req, res) => {
         new Date(),
       ]
     );
-
+    console.log("orderDetails:", orderDetails)
     // Check if orderDetails exist to insert them into the appropriate table
     if (orderDetails && orderDetails.length > 0) {
       //const purchaseOrderId = result.insertId; // Get the ID of the newly created purchase order
@@ -586,6 +668,30 @@ app.get("/api/get-purchase-orders", async (req, res) => {
     console.log(error);
   }
 });
+
+app.get("/api/get-purchase-orders-details", async (req, res) => {
+  try {
+    const poCode = req.query.poCode;
+
+    if (!poCode) {
+      return res.status(400).json({ error: "poCode is required" });
+    }
+
+    console.log("Executing query:", "SELECT * FROM retailflow.purchaseorderdetails where poCode= ?", [poCode]);
+
+    const [rows] = await pool.query("SELECT * FROM retailflow.purchaseorderdetails WHERE poCode = ?", [poCode]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "No purchase order found for the given poCode" });
+    }
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 app.post("/api/get-reciept-entry-code", async (req, res) => {
   try {
     const { codeType } = req.body;
