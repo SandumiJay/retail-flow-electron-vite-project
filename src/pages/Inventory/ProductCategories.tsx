@@ -19,7 +19,7 @@ import {
 } from "@tabler/icons-react";
 
 interface ProductCategory {
-  id: number;
+  id: string;
   Category: string;
   Status: number;
 }
@@ -95,9 +95,8 @@ const ProductCategories: React.FC = () => {
 
   const headers = (
     <tr>
-      <th style={{ width: "10%", textAlign: "center" }}>ID</th>
-      <th style={{ width: "40%", textAlign: "center" }}>Product Category</th>
-      <th style={{ width: "40%", textAlign: "left" }}>Status</th>
+      <th style={{ width: "50%", textAlign: "center" }}>Product Category</th>
+      <th style={{ width: "50%", textAlign: "left" }}>Status</th>
       <th></th>
     </tr>
   );
@@ -108,7 +107,7 @@ const ProductCategories: React.FC = () => {
     },
     validate: {
       category: (value) =>
-        /^[a-z]+([A-Z][a-z]*)*$/.test(value) ? null : "Invalid Category Name",
+      value? null : "Value Cannot be Empty",
     },
   });
 
@@ -187,7 +186,7 @@ const ProductCategories: React.FC = () => {
             placeholder="Electronics"
             {...form.getInputProps("category")} // Removed key usage
           />
-
+          
           <Group position="left" mt="md"> {/* Fixing the justify prop */}
             <Button type="submit" color="green">
               Create

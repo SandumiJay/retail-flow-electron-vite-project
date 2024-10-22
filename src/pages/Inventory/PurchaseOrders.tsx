@@ -206,7 +206,7 @@ const PurchaseOrders: React.FC = () => {
 
   const handleRemoveProductfromReciept = (productsToRemove: any[]) => {
     const updatedEntries = reciptEntries.filter(
-      (entry: any) => !productsToRemove.some((product) => product.po_id === entry.po_id)
+      (entry: any) => !productsToRemove.some((product) => product.sku === entry.sku)
     );
     const newTotalCost = updatedEntries.reduce(
       (total: number, item: any) => total + item.quantity * item.cost,
@@ -215,7 +215,7 @@ const PurchaseOrders: React.FC = () => {
   
     setReciptEntries(updatedEntries);
     setTotalCost(newTotalCost);
-    setReciptEntries('');
+    // setReciptEntries('');
   };
 
   const handlePrintPurchaseOrder = async () => {
@@ -387,7 +387,8 @@ const PurchaseOrders: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {reciptEntries.map((entry, index) => (
+              {
+              reciptEntries.map((entry: any, index: number) => (
                 <tr key={index}>
                   <td>{entry.sku}</td>
                   <td>{entry.productName}</td>

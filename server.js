@@ -425,6 +425,25 @@ app.put("/api/update-supplier", async (req, res) => {
     console.log(error);
   }
 });
+
+app.put("/api/update-customer", async (req, res) => {
+  try {
+    const { code, name, email, contact, address, city, country, status } = req.body;
+    const updateQuery = `update customers set name = ?, email = ?, contact = ?, address = ?, city = ?, country = ? where code = ?`;
+    const result = await pool.query(updateQuery, [
+      name,
+      email,
+      phone,
+      address,
+      city,
+      country,
+      code,
+    ]);
+    res.status(200).json({ message: "Supplier updated successfully." });
+  } catch (error) {
+    console.log(error);
+  }
+});
 app.post("/api/delete-supplier", async (req, res) => {
   try {
     const { supplier } = req.body;
@@ -438,6 +457,21 @@ app.post("/api/delete-supplier", async (req, res) => {
     console.log(error);
   }
 });
+app.post("/api/delete-customer", async (req, res) => {
+    try {
+      const { customers } = req.body;  // Get the product ID from the request body
+      console.log("Deleting Customer with ID:", customers.id);
+  
+      // Perform the deletion
+      await pool.query("Delete FROM customers where id  = ?", [customers.id]);
+      await pool.query("commit");
+  
+      res.status(200).json({ message: customers.name + " Product deleted successfully"});
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
 app.post("/api/delete-purchase-order", async (req, res) => {
   try {
@@ -524,9 +558,10 @@ app.get("/api/get-suppliers", async (req, res) => {
 app.post("/api/add-customer", async (req, res) => {
   const { code, name, email, contact, address, city, country } = req.body;
   const missingFields = [];
+  const EntryCode = await generateEntryCode(5);
 
   // Check each field and push missing fields to the array
-  if (!code) missingFields.push("code");
+  // if (!code) missingFields.push("code");
   if (!name) missingFields.push("name");
   if (!email) missingFields.push("email");
   if (!contact) missingFields.push("contact");
@@ -543,7 +578,7 @@ app.post("/api/add-customer", async (req, res) => {
   try {
     const [result] = await pool.query(
       "INSERT INTO customers (code, name, email, contact, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [code, name, email, contact, address, city, country]
+      [EntryCode, name, email, contact, address, city, country]
     );
 
     res.status(200).json({
@@ -604,7 +639,7 @@ const generateEntryCode = async (codeType) => {
     codeType,
   ]);
 
-  const codeSample = preFix + String(newValue).padStart(Length, "0");
+   const codeSample = preFix + String(newValue).padStart(Length, "0");
 
   return codeSample;
 };
@@ -697,7 +732,7 @@ app.post("/api/get-reciept-entry-code", async (req, res) => {
     const { codeType } = req.body;
     const [rows] = await pool.query(
       "SELECT * FROM codeformats WHERE Code = ?",
-      [codeType]
+      [codeType.codeType]
     );
 
     const nextValue = rows[0].nextValue;
