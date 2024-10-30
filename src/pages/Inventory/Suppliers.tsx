@@ -140,10 +140,9 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
   };
   const handleSupplierAdd = async (values: typeof form.values) => {
     console.log(values);
-    const { code, name, email, phone, address, city, country } = values;
+    const {  name, email, phone, address, city, country } = values;
     try {
       await axios.post(API_ENPOINTS.ADD_SUPPLIER, {
-        code: EntryCode,
         name,
         email,
         phone,

@@ -499,11 +499,11 @@ app.post("/api/delete-purchase-order", async (req, res) => {
 });
 
 app.post("/api/add-supplier", async (req, res) => {
-  const { code, name, email, phone, address, city, country } = req.body;
+  const { name, email, phone, address, city, country } = req.body;
   const missingFields = [];
 
   // Check each field and push missing fields to the array
-  if (!code) missingFields.push("code");
+  // if (!code) missingFields.push("code");
   if (!name) missingFields.push("name");
   if (!email) missingFields.push("email");
   if (!phone) missingFields.push("phone");
