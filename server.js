@@ -227,7 +227,8 @@ app.delete("/api/delete-product-category", async (req, res) => {
 app.post("/api/add-product", async (req, res) => {
   try {
     // Extract product data from req.body
-    const { name, category, quantity, cost, price, image } = req.body;
+    const { name, category, quantity, cost, price, image, maxDiscount } = req.body;
+    let dicountAllowed=0;
 
     // Input validation
     if (!name) {
@@ -251,12 +252,19 @@ app.post("/api/add-product", async (req, res) => {
     if (isNaN(price) || price < 0) {
       return res.status(400).json({ message: "Price must be a non-negative number" });
     }
+    if (isNaN(maxDiscount) || maxDiscount < 0 || maxDiscount > 100) {
+      return res.status(400).json({ message: "maxDiscount must be a non-negative number and in between 0 and 100" });
+    }
+
+    if(0 < maxDiscount &&  maxDiscount < 100){
+      dicountAllowed=1
+    }
 
     // Generate SKU and insert product data into the database
     const sku = await generateEntryCode(1);
     const [result] = await pool.query(
-      "INSERT INTO products (sku, productName, category, intQty,cost, price, image) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [sku, name, category, quantity,cost, price, image]
+      "INSERT INTO products (sku, productName, category, intQty,cost, price, image,maxDiscount,dicountAllowed) VALUES (?, ?, ?, ?, ?,?, ?, ?,?)",
+      [sku, name, category, quantity,cost, price, image,maxDiscount,dicountAllowed]
     );
 
     // Return success response with inserted product details
@@ -271,6 +279,7 @@ app.post("/api/add-product", async (req, res) => {
         cost,
         price,
         image,
+        maxDiscount,
       },
     });
   } catch (error) {
@@ -309,6 +318,7 @@ app.get("/api/get-products", async (req, res) => {
       CAST(cost AS DOUBLE) AS cost,
       CAST(price AS DOUBLE) AS price,
       image,
+      maxDiscount,
       status
        FROM products  `
     );
@@ -354,10 +364,11 @@ app.delete("/api/delete-product", async (req, res) => {
 
 
 app.put("/api/update-product", async (req, res) => {
-  const { sku, name, category, quantity, price, cost, image } = req.body;
+  const { sku, name, category, quantity, price, cost, image, maxDiscount } = req.body;
 
   // Validate that required fields are present
   const missingFields = [];
+  let dicountAllowed=0;
 
   // Check for missing required fields
   if (!sku) missingFields.push("sku");
@@ -366,6 +377,7 @@ app.put("/api/update-product", async (req, res) => {
   if (!quantity) missingFields.push("quantity");
   if (!price) missingFields.push("price");
   if (!cost) missingFields.push("cost");
+  if (!maxDiscount) missingFields.push("maxDiscount");
 
   // If there are missing fields, return a detailed error message
   if (missingFields.length > 0) {
@@ -373,12 +385,15 @@ app.put("/api/update-product", async (req, res) => {
       message: `Missing required fields: ${missingFields.join(", ")}`,
     });
   }
+ if (0<maxDiscount && maxDiscount<100){
+  dicountAllowed =1
+ }
 
   try {
     // Update the product in the database
     const updateQuery = `
       UPDATE products
-      SET productName = ?, category = ?, intQty = ?, price = ?, cost = ?, image = ?
+      SET productName = ?, category = ?, intQty = ?, price = ?, cost = ?, image = ?, maxDiscount=?, dicountAllowed=?
       WHERE sku = ?
     `;
 
@@ -390,6 +405,8 @@ app.put("/api/update-product", async (req, res) => {
       price,
       cost,
       image || null, // Use the new image or keep the old one
+      maxDiscount,
+      dicountAllowed,
       sku,
     ]);
 
@@ -403,7 +420,7 @@ app.put("/api/update-product", async (req, res) => {
     console.error("Error updating product:", error);
     return res
       .status(500)
-      .json({ message: "An error occurred while updating the product." });
+      .json({ message: error });
   }
 });
 

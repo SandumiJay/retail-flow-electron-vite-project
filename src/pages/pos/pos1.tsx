@@ -1,5 +1,6 @@
 import {
   Button,
+  Autocomplete,
   Card,
   Container,
   Grid,
@@ -10,39 +11,70 @@ import {
   Stack,
   Table,
   Text,
+  TextInput,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { DateInput } from "@mantine/dates";
 import axios from "axios";
 import API_ENPOINTS from "../../API";
 import '@mantine/dates/styles.css';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import emailjs from 'emailjs-com';
+
+
 interface Product {
   id: number;
   name: string;
   price: number;
   quantity?: number;
+  discount?: number;
+  sku?: string;
+}
+
+interface Customer {
+  code: string;
+  name: string;
+  email: string;
+  contact: string;
+  address: string;
+  city: string;
+  country: string;
+  status: number;
 }
 
 const POS1: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-
   const [productsDataSet, setProductsDataSet] = useState<any>([]);
-  const [productAutocompleteList, setProductAutocompleteList] = useState<any>(
-    []
-  );
+  const [productAutocompleteList, setProductAutocompleteList] = useState<any>([]);
   const [invoiceItemsList, setInvoiceItemsList] = useState<any>([]);
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
-  const [discount, setDiscount] = useState<number>(1);
+  const [discount, setDiscount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [checkoutModalOpen, setCheckoutModalOpen] = useState<boolean>(false);
   const [value, setValue] = useState<Date | null>(null);
+  const [postDate, setPostDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [productName, setProductName] = useState<string>("");
+  const [sku, setSKU] = useState<string>("");
+  const [maxDiscount, setMaxDiscount] = useState<number>(0);
+  const [customerDataSet, setcustomerDataSet] = useState<any>([]);
+  const [customerName, setcustomerName] = useState<any>([]);
+  const [contactNumber, setcontactNumber] = useState<any>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerEmail, setCustomerEmail] = useState<string>(""); // Add customer email state
+
+
   const handleAddToCart = () => {
     if (selectedProduct) {
-      setCart((prev) => [...prev, { ...selectedProduct, quantity,discount}]);
-      setQuantity(1);
+      setCart((prev) => [...prev, { ...selectedProduct, quantity, discount }]);
+      setQuantity(0);
       setSelectedProduct(null);
+      setProductName("");
+      setSKU("");
+      setDiscount(0);
     } else {
       alert("Please select a product.");
     }
@@ -56,147 +88,258 @@ const POS1: React.FC = () => {
     setCheckoutModalOpen(true);
   };
 
-  const handleConfirmCheckout = () => {
-    // Implement checkout logic here
-    alert("Checkout process initiated");
+  const handleConfirmCheckout = async (values) => {
+    const { procode, proname, category, quantity, price, cost,maxDiscount } = values;
+    alert("Checkout confirmed. Your order summary is displayed in the modal.");
+    setCart([]);
     setCheckoutModalOpen(false);
+    setcontactNumber("");
+    setcustomerName("");
+    
+    await axios.put(API_ENPOINTS.UPDATE_PRODUCT, {
+      sku: procode,
+      name: proname,
+      category,
+      quantity,
+      price,
+      cost,
+      image: imageUrl,
+      maxDiscount: maxDiscount,
+    });
+  };
+
+  const handleProductSelect = (sku: string) => {
+    const product = productsDataSet.find((p) => p.sku === sku);
+    if (product) {
+      setSelectedProduct(product);
+      setProductName(product.productName);
+      setSKU(product.sku);
+    }
+  };
+  const handleCustomerSelect = (contact: string) => {
+    const customer = customerDataSet.find((p) => p.contact === contact);
+    if (customer) {
+      setSelectedCustomer(customer);
+      setcustomerName(customer.name);
+      setcontactNumber(customer.contact);
+    }
+  };
+
+  const handleDiscountChange = (val: number | undefined) => {
+    const product = productsDataSet.find((p) => p.sku === sku);
+    if (product) {
+      setMaxDiscount(product.maxDiscount);
+      if (val !== undefined) {
+        if (val > maxDiscount) {
+          alert(`Discount cannot exceed ${maxDiscount}%`);
+          setDiscount(maxDiscount);
+        } else {
+          setDiscount(val);
+        }
+      } else {
+        setDiscount(0);
+      }
+    }
+  };
+
+  const calculateDiscountedPrice = (price: number, discount: number): number => {
+    return price - (price * (discount / 100));
   };
 
   const cartTotal = cart
-    .reduce((acc, item) => acc + item.price * item.quantity, 0)
+    .reduce((acc, item) => acc + calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1), 0)
     .toFixed(2);
 
-  const printPage = () => {
-    window.print();
-  };
   const loadProducts = async () => {
     try {
       const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
-      console.log(response.data);
-      if (Array.isArray(response.data)) {
-        setProducts(response.data); // Assuming the response contains an array of products
-        setProductsDataSet(products);
-
-        // Map through products to create the autocomplete list
-        const spl = products.map((element: any) => {
-          return element.productName; // Assuming 'name' is the label you want to display
-        });
-
-        // Set the product autocomplete list
-        setProductAutocompleteList(spl);
-      } else {
-        console.error("Unexpected data format:", response.data);
-      }
+      const products = response.data;
+      setProductsDataSet(products);
+      const SKU = products.map((element: any) => element.sku);
+      setProductAutocompleteList(SKU);
     } catch (error) {
-      console.error("Error loading products:", error);
+      console.log(error);
     }
   };
+
+  const loadCustomer = async () => {
+    try {
+      const response = await axios.get(API_ENPOINTS.GET_CUSTOMERS);
+      const customer = response.data;
+      setcustomerDataSet(customer);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const generatePDF = () => {
+    const doc = new jsPDF();
+
+  
+    doc.text("", 14, 18);
+    doc.autoTable({
+      head: [['Product', 'Quantity', 'Discount', 'Total Price']],
+      body: cart.map((item) => [
+        item.productName,
+        item.quantity,
+        item.discount ? `${item.discount}%` : '0%',
+        `$${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}`,
+      ]),
+    });
+
+    doc.text(`Total: $${cartTotal}`, 14, doc.lastAutoTable.finalY + 10);
+    doc.save("order_summary.pdf");
+  };
+  const sendEmail = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const templateParams = {
+      to_name: customerName,
+      from_name: "Your Business Name",
+      message: `Thank you for your order! Here is your order summary: Total: $${cartTotal}`,
+      email: customerEmail,
+    };
+
+    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams, 'YOUR_USER_ID')
+      .then((response) => {
+        console.log('Email sent successfully!', response.status, response.text);
+        alert("Email sent successfully!");
+      }, (error) => {
+        console.log('Failed to send email:', error);
+        alert("Failed to send email.");
+      });
+  };
+
+
   useEffect(() => {
     loadProducts();
+    loadCustomer();
   }, []);
+
   return (
     <Container fluid>
-       
+      
       <Grid>
-        <Grid.Col span={8} style={{backgroundColor:"lightseagreen"}}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <Group>
-              <Text size="lg">Post Date</Text>
-              <DateInput
-                value={value}
-                onChange={setValue}
-                placeholder="Date input"
-              />
-            </Group>
-            <Group>
-              <Text size="lg">Due Date</Text>
-              <DateInput
-                value={value}
-                onChange={setValue}
-                placeholder="Date input"
-              />
-            </Group>
-          </div>
-        </Grid.Col>
-        <Grid.Col span={8} style={{backgroundColor:"lightblue"}}>
-          <Card>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text size="lg">Product :</Text>
-                <Select
-                  placeholder="Choose a product"
-                  value={selectedProduct ? selectedProduct.name : ""}
+
+      <Grid.Col span={12}>
+          <Card padding="lg" shadow="sm">
+            <Grid>
+              <Grid.Col span={6}>
+                <Text size="lg" weight={500}>Customer Name</Text>
+                <TextInput value={customerName} placeholder="Customer Name" readOnly/>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Text size="lg" weight={500}>Contact Number</Text>
+                <Autocomplete
+                  data={customerDataSet.map((customer: Customer) => customer.contact)}
+                  value={contactNumber}
                   onChange={(val) => {
-                    const product = products.find((p) => p.name === val);
-                    setSelectedProduct(product || null);
+                    setcontactNumber(val);
+                    handleCustomerSelect(val);
                   }}
-                  data={productAutocompleteList}
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text size="lg">Qty :</Text>
-                <NumberInput
-                  value={quantity}
-                  onChange={(val) => setQuantity(val || 1)}
-                  min={1}
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text size="lg">Discount</Text>
-                <NumberInput
-                  value={discount}
-                  onChange={(val) => setDiscount(val || 1)}
-                />
-              </div>
-
-              <Button onClick={handleAddToCart}>Add</Button>
-            </div>
+                  placeholder="Contact Number"
+                />              </Grid.Col>
+            </Grid>
           </Card>
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Product</Table.Th>
-                <Table.Th>Quantity</Table.Th>
-                <Table.Th>Discount</Table.Th>
-                <Table.Th>Price</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {cart.map((item, index) => (
-                <Table.Tr key={index}>
-                  <Table.Td>{item.name}</Table.Td>
-                  <Table.Td>{item.quantity}</Table.Td>
-                  <Table.Td>{item.discount}</Table.Td>
-                  <Table.Td>${(item.price * item.quantity).toFixed(2)}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Card padding="lg" shadow="sm">
+            <Grid>
+              <Grid.Col span={6}>
+                <Text size="lg" weight={500}>Post Date</Text>
+                <DateInput value={value} onChange={setValue} placeholder="Select date" />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Text size="lg" weight={500}>Due Date</Text>
+                <DateInput value={value} onChange={setValue} placeholder="Select date" />
+              </Grid.Col>
+            </Grid>
+          </Card>
         </Grid.Col>
 
-        <Grid.Col span={4} style={{backgroundColor:"lightgrey"}}>
-          <Card>
-            <Text size="lg">Cart Summary</Text>
-            {cart.length === 0 && <Text>No items in cart</Text>}
-            <Stack>
-              {cart.map((item, index) => (
-                <Group key={index}>
-                  <Text>
-                    {item.name} x{item.quantity}
-                  </Text>
-                  <Text>${(item.price * item.quantity).toFixed(2)}</Text>
-                  <Button
-                    variant="light"
-                    color="red"
-                    onClick={() => handleRemoveFromCart(index)}
-                  >
-                    Remove
-                  </Button>
+        <Grid.Col span={8}>
+          <Card padding="lg" shadow="sm">
+            <Stack spacing="sm">
+              <Grid>
+                <Group>
+                  <Grid.Col span={3}>
+                    <Text size="lg" weight={500}>SKU:</Text>
+                    <Autocomplete
+                      data={productAutocompleteList}
+                      value={sku}
+                      onChange={(val) => {
+                        setSKU(val);
+                        handleProductSelect(val);
+                      }}
+                      placeholder="Select SKU"
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={4}>
+                    <Text size="lg" weight={500}>Product Name:</Text>
+                    <TextInput value={productName} readOnly />
+                  </Grid.Col>
+                  <Grid.Col span={2}>
+                    <Text size="lg" weight={500}>Qty:</Text>
+                    <NumberInput value={quantity} onChange={(val) => setQuantity(val || 1)} min={1} />
+                  </Grid.Col>
+                  <Grid.Col span={2}>
+                    <Text size="lg" weight={500}>Discount:</Text>
+                    <NumberInput
+                      value={discount}
+                      onChange={handleDiscountChange}
+                      min={0}
+                      max={maxDiscount}
+                    />
+                  </Grid.Col>
                 </Group>
-              ))}
-              <Group>
-                <Text>Total</Text>
-                <Text>${cartTotal}</Text>
+              </Grid>
+              <Button color="green" onClick={handleAddToCart}>Add to Cart</Button>
+            </Stack>
+
+            <Table mt="md">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Discount</th>
+                  <th>Price</th>
+                  <th>Discounted Price</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cart.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.sku}</td>
+                    <td>{item.productName}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.discount}%</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td>${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                    <td>
+                      <Button
+                        variant="light"
+                        color="red"
+                        onClick={() => handleRemoveFromCart(index)}
+                      >
+                        Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+        </Grid.Col>
+
+        <Grid.Col span={4}>
+          <Card padding="lg" shadow="sm">
+            <Text size="lg" weight={500}>Cart Summary</Text>
+            {cart.length === 0 && <Text>No items in cart</Text>}
+            <Stack spacing="xs">
+              <Group position="apart">
+                <Text weight={500}>Total:</Text>
+                <Text weight={500}>${cartTotal}</Text>
               </Group>
             </Stack>
             <Select
@@ -208,6 +351,7 @@ const POS1: React.FC = () => {
                 { value: "card", label: "Card" },
                 { value: "online", label: "Online" },
               ]}
+              mt="md"
             />
             <Button onClick={handleCheckout} fullWidth mt="md">
               Checkout
@@ -219,12 +363,68 @@ const POS1: React.FC = () => {
       <Modal
         opened={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title="Confirm Checkout"
+        title="RetailFlow"
       >
-        <Text>Are you sure you want to proceed with the checkout?</Text>
-        <Button onClick={handleConfirmCheckout} fullWidth mt="md">
-          Confirm
-        </Button>
+        <Stack spacing="xs">
+         
+          <h3>Cart Summary</h3>
+          <Group>
+          <Text><strong>Customer:</strong> {customerName}</Text>
+          <Text><strong>Contact:</strong> {contactNumber}</Text>
+          </Group>
+          <Table mt="sm">
+            <Table.Thead striped highlightOnHover>
+              <Table.Tr>
+                <Table.Th>Item</Table.Th>
+                <Table.Th>Quantity</Table.Th>
+                <Table.Th>Unit Price (Rs.)</Table.Th>
+                <Table.Th>Discount</Table.Th>
+                <Table.Th>Total (Rs.)</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {cart.map((item, index) => (
+                <Table.Tr key={index}>
+                  <Table.Td>{item.productName}</Table.Td>
+                  <Table.Td>{item.quantity}</Table.Td>
+                  <Table.Td>{item.price.toFixed(2)}</Table.Td>
+                  <Table.Td>{item.discount}%</Table.Td>
+                  <Table.Td>{(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+
+          <Table>
+  <tbody>
+    <tr>
+      <td><strong>Subtotal:</strong></td>
+      <td style={{ textAlign: 'right' }}>Rs. {cartTotal}</td>
+    </tr>
+    <tr>
+      <td><strong>Discount:</strong></td>
+      <td style={{ textAlign: 'right' }}>Rs. {discount}</td>
+    </tr>
+    <tr>
+      <td><strong>Net Total:</strong></td>
+      <td style={{ textAlign: 'right' }}>Rs. {cartTotal}</td>
+    </tr>
+    <tr>
+      <td><strong>Payment Method:</strong></td>
+      <td style={{ textAlign: 'right' }}>{paymentMethod}</td>
+    </tr>
+  </tbody>
+</Table>
+
+          <Text mt="sm"><strong>Payment Instructions:</strong> Please draw the cheque in favor of Anuradha Transport Services.</Text>
+          
+          <Button color="green" fullWidth mt="md" onClick={handleConfirmCheckout}>
+            Confirm Checkout
+          </Button>
+          <Button mt="md" fullWidth color="blue" onClick={generatePDF}>Print PDF</Button>
+          <Button mt="md" fullWidth color="teal" onClick={sendEmail}>Send Email</Button>
+     
+        </Stack>
       </Modal>
     </Container>
   );

@@ -53,12 +53,12 @@ const Sidebar: React.FC = () => {
             active={location.pathname == "/purchaseorders"}
             leftSection={<IconFolders size="1rem" stroke={1.5} />}
           />
-          <NavLink
+          {/* <NavLink
             label="Inventory"
             href="/inventory"
             active={location.pathname == "/inventory"}
             leftSection={<IconCashRegister size="1rem" stroke={1.5} />}
-          />
+          /> */}
           <NavLink
             label="Products"
             active={location.pathname == "/products"}

@@ -80,15 +80,17 @@ const PurchaseOrders: React.FC = () => {
   const [purchaseOrdersDetails, setPurchaseOrdersDeatils] = React.useState<any[]>([]);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<any>(null);
   const [viewDetailsModal, setViewDetailsModal] = React.useState(false);
+  const [productName, setProductName] = React.useState<string>("");
+  const [sku, setSKU] = React.useState<string>("");
 
   const rows = purchaseOrders.map((product) => (
-    <tr key={product.id}>
-      <td>{product.purchaseOrderCode}</td>
-      <td>{product.SupplierCode}</td>
-      <td>{product.SupplierName}</td>
-      <td>{product.docDate}</td>
-      <td>${product.TotalCost.toFixed(2)}</td>
-      <td style={{ display: "flex", justifyContent: "end", gap: "5px" }}>
+    <Table.Tr key={product.id}>
+      <Table.Td style={{ textAlign: "left" }}>{product.purchaseOrderCode}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.SupplierCode}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.SupplierName}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.docDate}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>LKR {product.TotalCost.toFixed(2)}</Table.Td>
+      <Table.Td style={{ display: "flex", justifyContent: "end", gap: "5px" }}>
         <Button 
           color="teal" 
           onClick={() => {
@@ -103,19 +105,19 @@ const PurchaseOrders: React.FC = () => {
           
           <IconTrashX />
         </Button>
-      </td>
-    </tr>
+      </Table.Td>
+    </Table.Tr>
   ));
 
   const headers = (
-    <tr>
-      <th>PURCHASE ORDER</th>
-      <th>SUPPLIER CODE</th>
-      <th>SUPPLIER NAME</th>
-      <th>DATE</th>
-      <th>TOTAL COST</th>
-      <th></th>
-    </tr>
+    <Table.Tr>
+      <Table.Th style={{ textAlign: "left" }}>PURCHASE ORDER</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>SUPPLIER CODE</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>SUPPLIER NAME</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>DATE</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>TOTAL COST</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}></Table.Th>
+    </Table.Tr>
   );
 
   // const handleRemovePurchaseOrder = async (poCode: string) => {
@@ -164,12 +166,14 @@ const PurchaseOrders: React.FC = () => {
       const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
       const products = response.data;
       setProductsDataSet(products);
-      const spl = products.map((element: any) => element.productName);
+      const spl = products.map((element: any) => element.sku);
       setProductAutocompleteList(spl);
     } catch (error) {
       console.log(error);
     }
   };
+
+ 
 
   const handleSupplierSelect = (value: string) => {
     const suppId = value;
@@ -181,10 +185,14 @@ const PurchaseOrders: React.FC = () => {
 
   const handleProductSelect = (value: string) => {
     const seletedProduct = productsDataSet.find((element: any) => {
-      return element.productName === value;
+      return element.sku === value;
     });
+    
     setSelectedProduct(seletedProduct);
+    setSKU(seletedProduct.sku);
+    setProductName(seletedProduct.productName);  
     setProductCost(seletedProduct.cost);
+    
   };
 
   const handleAddProductToReciept = () => {
@@ -201,6 +209,9 @@ const PurchaseOrders: React.FC = () => {
       setSelectedProduct({});
       setProductCost(0);
       setProductQuantity(0);
+    }
+    else{
+      alert(`Product or Product Quantitiy Empty`);
     }
   };
 
@@ -309,7 +320,7 @@ const PurchaseOrders: React.FC = () => {
   return (
     <div>
       <Flex justify="space-between">
-        <Text>Purchase Orders</Text>
+        <h4>Purchase Orders</h4>
         <Button onClick={() => setViewAddItem('add')} color="teal">
           <IconSquareRoundedPlus />
         </Button>
@@ -362,6 +373,12 @@ const PurchaseOrders: React.FC = () => {
             label="Select Product"
             data={productAutocompleteList}
             onChange={handleProductSelect}
+          />
+           <TextInput
+            label="Product"
+            type="text"
+            value={productName}
+            readOnly
           />
           <TextInput
             label="Quantity"
@@ -460,9 +477,9 @@ const PurchaseOrders: React.FC = () => {
         
       </Modal>
 
-      <Table>
-        <thead>{headers}</thead>
-        <tbody>{rows}</tbody>
+      <Table striped highlightOnHover>
+      <Table.Thead>{headers}</Table.Thead>
+      <Table.Tbody>{rows}</Table.Tbody>
       </Table>
     </div>
   );
