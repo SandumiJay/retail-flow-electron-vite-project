@@ -1,0 +1,56 @@
+-- MySQL dump 10.13  Distrib 8.0.38, for macos14 (x86_64)
+--
+-- Host: localhost    Database: retailflow
+-- ------------------------------------------------------
+-- Server version	8.0.39
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `purchaseorder`
+--
+
+DROP TABLE IF EXISTS `purchaseorder`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchaseorder` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `purchaseOrderCode` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `SupplierCode` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `SupplierName` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `TotalCost` decimal(65,2) NOT NULL,
+  `postDate` date NOT NULL,
+  `docDate` date NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `purchaseorder`
+--
+
+LOCK TABLES `purchaseorder` WRITE;
+/*!40000 ALTER TABLE `purchaseorder` DISABLE KEYS */;
+INSERT INTO `purchaseorder` VALUES (2,'SX00023','SX00018','Ven2',11101.22,'2024-09-24','2024-09-24'),(3,'SX00024','SX00013','qwqwqwq',11000.00,'2024-09-24','2024-09-24'),(4,'SX00025','SX00018','Ven2',1.00,'2024-09-24','2024-09-24'),(5,'SX00026','SX00018','Ven2',2.00,'2024-09-24','2024-09-24'),(7,'SPX00029','SX00018','Ven2',0.00,'2024-09-29','2024-09-29'),(8,'SPX00031','SX00013','qwqwqwq',0.00,'2024-09-30','2024-09-30'),(9,'SPX00033','SX00013','qwqwqwq',1.00,'2024-10-16','2024-10-16'),(10,'SPX00034','SX00013','qwqwqwq',23.00,'2024-10-19','2024-10-19'),(11,'SPX00035','SX00018','Ven2',30.00,'2024-10-19','2024-10-19'),(12,'SPX00036','SX00013','qwqwqwq',31518.00,'2024-10-19','2024-10-19'),(13,'SPX00037','SX00019','qwqw',32140.00,'2024-10-19','2024-10-19'),(14,'SPX00038','SX00018','Ven2',36.00,'2024-10-19','2024-10-19'),(15,'SPX00039','SX00013','qwqwqwq',129.00,'2024-10-19','2024-10-19'),(16,'SPX00040','SX00013','qwqwqwq',129.00,'2024-10-19','2024-10-19'),(17,'SPX00041','SX00013','qwqwqwq',129.00,'2024-10-19','2024-10-19'),(40,'SPX00064','SX00018','Ven2',114.00,'2024-10-20','2024-10-20');
+/*!40000 ALTER TABLE `purchaseorder` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2024-10-21  2:23:29
