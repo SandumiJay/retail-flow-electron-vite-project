@@ -43,7 +43,9 @@ const Sidebar: React.FC = () => {
           label="Inventory"
           childrenOffset={28}
           href="#required-for-focus"
-          leftSection={<IconClipboardData size="1rem" stroke={1.5} />}
+          leftSection={<IconClipboardData size="1rem" stroke={1.5} />
+        } 
+        defaultOpened={true}
         >
           <NavLink
             label="Purchase Orders"

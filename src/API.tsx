@@ -25,6 +25,8 @@ const API_ENPOINTS =  {
     GET_RECIEPT_ENTRY_CODE: `${BASE_URL}/api/get-reciept-entry-code`,
     CREATE_PURCHASE_ORDER: `${BASE_URL}/api/create-purchase-order`,
     GET_PURCHASE_ORDERS: `${BASE_URL}/api/get-purchase-orders`,
+    GET_PURCHASE_ORDERS_DETAILS: `${BASE_URL}/api/get-purchase-orders-details`,
+    DELETE_PURCHASE_ORDER: `${BASE_URL}/api/delete-purchase-order`,
 }
 
 export default API_ENPOINTS
