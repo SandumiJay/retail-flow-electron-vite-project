@@ -27,6 +27,8 @@ const API_ENPOINTS =  {
     GET_PURCHASE_ORDERS: `${BASE_URL}/api/get-purchase-orders`,
     GET_PURCHASE_ORDERS_DETAILS: `${BASE_URL}/api/get-purchase-orders-details`,
     DELETE_PURCHASE_ORDER: `${BASE_URL}/api/delete-purchase-order`,
+    UPDATE_INVENTORY: `${BASE_URL}/api/auto-update-inventory`,
 }
+
 
 export default API_ENPOINTS

@@ -15,7 +15,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { DateInput } from "@mantine/dates";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import API_ENPOINTS from "../../API";
 import '@mantine/dates/styles.css';
 import { jsPDF } from 'jspdf';
@@ -64,7 +64,8 @@ const POS1: React.FC = () => {
   const [customerName, setcustomerName] = useState<any>([]);
   const [contactNumber, setcontactNumber] = useState<any>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerEmail, setCustomerEmail] = useState<string>(""); // Add customer email state
+  const [customerEmail, setCustomerEmail] = useState<string>(""); 
+  const [maxQty, setMaxQty] = useState<number>(0);
 
 
   const handleAddToCart = () => {
@@ -88,24 +89,27 @@ const POS1: React.FC = () => {
     setCheckoutModalOpen(true);
   };
 
-  const handleConfirmCheckout = async (values) => {
-    const { procode, proname, category, quantity, price, cost,maxDiscount } = values;
-    alert("Checkout confirmed. Your order summary is displayed in the modal.");
-    setCart([]);
-    setCheckoutModalOpen(false);
-    setcontactNumber("");
-    setcustomerName("");
-    
-    await axios.put(API_ENPOINTS.UPDATE_PRODUCT, {
-      sku: procode,
-      name: proname,
-      category,
-      quantity,
-      price,
-      cost,
-      image: imageUrl,
-      maxDiscount: maxDiscount,
-    });
+  const handleConfirmCheckout = async () => {
+    let response: AxiosResponse<any, any>;
+    try {
+      console.log(cart);
+      const updatePayload = cart.map((item) => ({
+        sku: item.sku,
+        quantity: item.quantity,
+      }));
+  
+      console.log(updatePayload);
+      response = await axios.put(API_ENPOINTS.UPDATE_INVENTORY, { products: updatePayload });
+  
+      alert("Checkout confirmed. Inventory updated successfully.");
+      setCart([]);
+      setCheckoutModalOpen(false);
+      setcontactNumber("");
+      setcustomerName("");
+    } catch (error) {
+      console.error("Error response:", error.response.data.message);
+      alert("Failed to update inventory. Please try again." +  error.response.data.message);
+    }
   };
 
   const handleProductSelect = (sku: string) => {
@@ -138,6 +142,23 @@ const POS1: React.FC = () => {
         }
       } else {
         setDiscount(0);
+      }
+    }
+  };
+
+  const handleQtyChange = (val: number | undefined) => {
+    const product = productsDataSet.find((p) => p.sku === sku);
+    if (product) {
+      setMaxQty(product.intQty);
+      if (val !== undefined) {
+        if (val > maxQty) {
+          alert(`Quantity cannot exceed ${maxQty}`);
+          setQuantity(0);
+        } else {
+          setQuantity(val);
+        }
+      } else {
+        setQuantity(0);
       }
     }
   };
@@ -278,9 +299,18 @@ const POS1: React.FC = () => {
                     <TextInput value={productName} readOnly />
                   </Grid.Col>
                   <Grid.Col span={2}>
-                    <Text size="lg" weight={500}>Qty:</Text>
-                    <NumberInput value={quantity} onChange={(val) => setQuantity(val || 1)} min={1} />
-                  </Grid.Col>
+                      <Text size="lg" weight={500}>Qty:</Text>
+                      <NumberInput 
+                        value={quantity} 
+                        onChange={(val) => {
+                          handleQtyChange(val);
+                          setQuantity(val);
+                          
+                        }} 
+                        min={0} 
+                        max={maxQty}
+                       />
+                    </Grid.Col>
                   <Grid.Col span={2}>
                     <Text size="lg" weight={500}>Discount:</Text>
                     <NumberInput

@@ -361,8 +361,6 @@ app.delete("/api/delete-product", async (req, res) => {
   }
 });
 
-
-
 app.put("/api/update-product", async (req, res) => {
   const { sku, name, category, quantity, price, cost, image, maxDiscount } = req.body;
 
@@ -421,6 +419,63 @@ app.put("/api/update-product", async (req, res) => {
     return res
       .status(500)
       .json({ message: error });
+  }
+});
+
+
+app.put("/api/auto-update-inventory", async (req, res) => {
+  const { products } = req.body;
+  console.log(products);
+
+  // Validate that the products array is provided and is an array
+  if (!Array.isArray(products) || products.length === 0) {
+    return res.status(400).json({
+      message: "Request must include an array of products with SKU and quantity." + Array.isArray(products),
+    });
+  }
+
+  // Validate each product in the array for missing fields (SKU and quantity)
+  const missingProducts = products
+    .filter((product, index) => !product.sku || product.quantity == null)
+    .map((product, index) => `Product at index ${index}`);
+
+  if (missingProducts.length > 0) {
+    return res.status(400).json({
+      message: `Missing required fields in products: ${missingProducts.join(", ")}`,
+    });
+  }
+
+  try {
+    // Process each product in the array and update the database
+    for (const { sku, quantity } of products) {
+      if (quantity <= 0) {
+        // Optionally check if the quantity is valid (greater than zero)
+        return res.status(400).json({
+          message: "Quantity must be greater than zero for SKU: " + sku,
+        });
+      }
+
+      // SQL query to update the inventory based on SKU and quantity
+      const updateQuery = `
+        UPDATE products
+        SET intQty = intQty - ?
+        WHERE sku = ? AND intQty >= ?
+      `;
+
+      // Update the quantity in the database for each product
+      const [result] = await db.query(updateQuery, [quantity, sku, quantity]);
+
+      // Check if the SKU was found and the quantity was updated
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: `Product with SKU ${sku} not found or insufficient stock.` });
+      }
+    }
+
+    // If all products were successfully updated
+    return res.status(200).json({ message: "Products updated successfully." });
+  } catch (error) {
+    console.error("Error updating products:", error);
+    return res.status(500).json({ message: "An error occurred while updating products." });
   }
 });
 
