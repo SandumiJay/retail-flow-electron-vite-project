@@ -9,7 +9,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import React, { useEffect } from "react";
-import API_ENDPOINTS from "../../API"; // Fixed Typo
+import API_ENDPOINTS from "../../API"; 
 import axios from "axios";  
 import "./Products.css";
 import {
@@ -33,7 +33,6 @@ const ProductCategories: React.FC = () => {
 
   const [productCategoryList, setProductCategoryList] = React.useState<ProductCategory[]>([]);
 
-
   const loadProductCategories = async () => {
     try {
       const response = await axios.get<{
@@ -42,12 +41,10 @@ const ProductCategories: React.FC = () => {
       }>(API_ENDPOINTS.GET_PRODUCT_CATEGORIES);
       console.log(response.data);
       setProductCategoryList(response.data.data || []); 
-      
     } catch (error) {
       console.log(error);
     }
   };
-
 
   const handleDeleteConfirm = (product: ProductCategory) => {
     setSelectedProductCategoryId(product.id);
@@ -107,14 +104,12 @@ const ProductCategories: React.FC = () => {
     },
     validate: {
       category: (value) =>
-      value? null : "Value Cannot be Empty",
+        value ? null : "Value Cannot be Empty",
     },
   });
 
   const handleProductCategoryUpdate = async (values: { category: string }) => {
     const { category } = values;
-    console.log(values);
-    console.log(category);
     try {
       await axios.put(API_ENDPOINTS.UPDATE_PRODUCT_CATEGORY, {
         id: selectedProductCategoryId,
@@ -130,8 +125,6 @@ const ProductCategories: React.FC = () => {
 
   const handleProductCategorySave = async (values: { category: string }) => {
     const { category } = values;
-    console.log(values);
-    console.log(category);
     try {
       await axios.post(API_ENDPOINTS.CREATE_PRODUCT_CATEGORY, {
         category: category,
@@ -162,8 +155,7 @@ const ProductCategories: React.FC = () => {
         size="lg"
       >
         <p>Are you sure you want to delete this product category?</p>
-
-        <Group position="left" mt="md"> {/* Fixing the justify prop */}
+        <Group position="left" mt="md">
           <Button type="submit" color="red" onClick={hanldeDeleteProceed}>
             Delete
           </Button>
@@ -175,7 +167,10 @@ const ProductCategories: React.FC = () => {
 
       <Modal
         opened={viewAddItem}
-        onClose={() => setViewAddItem(false)}
+        onClose={() => {
+          setViewAddItem(false);
+          form.reset(); // Reset form values when closing
+        }}
         title="Add new Product Category"
         size="lg"
       >
@@ -184,14 +179,19 @@ const ProductCategories: React.FC = () => {
             withAsterisk
             label="Category Name"
             placeholder="Electronics"
-            {...form.getInputProps("category")} // Removed key usage
+            {...form.getInputProps("category")}
           />
-          
-          <Group position="left" mt="md"> {/* Fixing the justify prop */}
+          <Group position="left" mt="md">
             <Button type="submit" color="green">
               Create
             </Button>
-            <Button onClick={() => setViewAddItem(false)} color="gray">
+            <Button
+              onClick={() => {
+                setViewAddItem(false);
+                form.reset(); // Reset form values when closing
+              }}
+              color="gray"
+            >
               Close
             </Button>
           </Group>
@@ -200,7 +200,10 @@ const ProductCategories: React.FC = () => {
 
       <Modal
         opened={viewEditItem}
-        onClose={() => setViewEditItem(false)}
+        onClose={() => {
+          setViewEditItem(false);
+          form.reset(); // Reset form values when closing
+        }}
         title="Edit Product Category"
         size="lg"
       >
@@ -209,14 +212,19 @@ const ProductCategories: React.FC = () => {
             withAsterisk
             label="Category Name"
             placeholder="Electronics"
-            {...form.getInputProps("category")} // Removed key usage
+            {...form.getInputProps("category")}
           />
-
-          <Group position="left" mt="md"> {/* Fixing the justify prop */}
+          <Group position="left" mt="md">
             <Button type="submit" color="green">
               Update
             </Button>
-            <Button onClick={() => setViewEditItem(false)} color="gray">
+            <Button
+              onClick={() => {
+                setViewEditItem(false);
+                form.reset(); // Reset form values when closing
+              }}
+              color="gray"
+            >
               Close
             </Button>
           </Group>
@@ -238,7 +246,7 @@ const ProductCategories: React.FC = () => {
             withTableBorder
             className="table-striped-data"
           >
-            <thead>{headers}</thead> {/* Fixed Mantine Table usage */}
+            <thead>{headers}</thead>
             <tbody>{rows}</tbody>
           </Table>
         </div>

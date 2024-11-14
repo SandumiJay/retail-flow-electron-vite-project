@@ -332,7 +332,7 @@ const Products: React.FC = () => {
       >
         <p>Are you sure you want to delete this product?</p>
         <Group justify="flex-end" mt="md">
-          <Button onClick={() => setViewAddItem(false)} color="gray">
+          <Button onClick={() => setViewDelete(false)} color="gray">
             Close
           </Button>
           <Button onClick={handleDeleteProceed} color="red">

@@ -12,22 +12,29 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { console } from "inspector";
 dotenv.config(); // Load environment variables from a .env file
+import SSHDBConnection from './db.js'; 
 
 const app = express();
 const port = 3001;
 
-const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "1QAZ2wsx@", // Ensure you set a strong password for production
-  database: "retailflow",
-  decimalNumbers: true,
-});
+
+
+// const pool = mysql.createPool({
+//   host: "localhost",
+//   user: "root",
+//   password: "1QAZ2wsx@", // Ensure you set a strong password for production
+//   database: "retailflow",
+//   decimalNumbers: true,
+// });
 
 app.use(cors());
 app.use(bodyParser.json());
 
-const db = pool;
+// const db = pool;
+
+
+
+
 // Example route
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from the backend!" });
@@ -39,6 +46,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const createNewUser = async (username, password) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    const db = await SSHDBConnection; 
     const [result] = await db.query(
       "INSERT INTO users (username, password) VALUES (?, ?)",
       [username, hashedPassword]
@@ -63,6 +71,7 @@ app.get("/api/create-user", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   try {
+    const db = await SSHDBConnection; 
     const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [
       username,
     ]);
@@ -90,7 +99,7 @@ app.post("/api/login", async (req, res) => {
 
     res.json({ message: "Login successful", token });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" + error });
   }
 });
 
@@ -102,7 +111,7 @@ app.post("/api/create-product-category", async (req, res) => {
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
     }
-
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO productcategories (Category	, Status) VALUES (?, ?)",
       [category, 1] // Assuming status is 1 (active) by default
@@ -123,6 +132,7 @@ app.post("/api/create-product-category", async (req, res) => {
 app.get("/api/get-product-categories", async (req, res) => {
   try {
     // Query the database for all unique product categories
+    const pool = await SSHDBConnection; 
     const [categories] = await pool.query(
       "SELECT DISTINCT id,Category,Status FROM productcategories group by id,Category,Status"
     );
@@ -157,7 +167,7 @@ app.put("/api/update-product-category", async (req, res) => {
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
     }
-
+    const pool = await SSHDBConnection; 
     await pool.query("UPDATE productcategories SET Category = ? WHERE id = ?", [
       category,
       id,
@@ -217,6 +227,7 @@ app.post(
 app.delete("/api/delete-product-category", async (req, res) => {
   try {
     const { id } = req.query;
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM productcategories WHERE id = ?", [id]);
     res.status(200).json({ message: "Category deleted successfully" });
   } catch (error) {
@@ -262,6 +273,7 @@ app.post("/api/add-product", async (req, res) => {
 
     // Generate SKU and insert product data into the database
     const sku = await generateEntryCode(1);
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO products (sku, productName, category, intQty,cost, price, image,maxDiscount,dicountAllowed) VALUES (?, ?, ?, ?, ?,?, ?, ?,?)",
       [sku, name, category, quantity,cost, price, image,maxDiscount,dicountAllowed]
@@ -293,6 +305,7 @@ app.post("/api/add-product", async (req, res) => {
 
 app.get("/api/get-users", upload.single("image"), async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM users");
 
     // Return the list of users in the response
@@ -308,6 +321,7 @@ app.get("/api/get-users", upload.single("image"), async (req, res) => {
 app.get("/api/get-products", async (req, res) => {
   try {
     // Query the database for all product categories
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query(
       `SELECT 
       id,
@@ -351,6 +365,7 @@ app.delete("/api/delete-product", async (req, res) => {
     console.log("Deleting product with ID:", id);
 
     // Perform the deletion
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM products WHERE id = ?", [id]);
     await pool.query("commit");
 
@@ -396,6 +411,7 @@ app.put("/api/update-product", async (req, res) => {
     `;
 
     // Assuming you're using MySQL or a similar relational database
+    const db = await SSHDBConnection; 
     const result = await db.query(updateQuery, [
       name,
       category,
@@ -463,6 +479,7 @@ app.put("/api/auto-update-inventory", async (req, res) => {
       `;
 
       // Update the quantity in the database for each product
+      const db = await SSHDBConnection; 
       const [result] = await db.query(updateQuery, [quantity, sku, quantity]);
 
       // Check if the SKU was found and the quantity was updated
@@ -483,6 +500,7 @@ app.put("/api/update-supplier", async (req, res) => {
   try {
     const { code, name, email, phone, address, city, country } = req.body;
     const updateQuery = `update suppliers set name = ?, email = ?, phone = ?, address = ?, city = ?, country = ? where code = ?`;
+    const pool = await SSHDBConnection; 
     const result = await pool.query(updateQuery, [
       name,
       email,
@@ -501,19 +519,21 @@ app.put("/api/update-supplier", async (req, res) => {
 app.put("/api/update-customer", async (req, res) => {
   try {
     const { code, name, email, contact, address, city, country, status } = req.body;
-    const updateQuery = `update customers set name = ?, email = ?, contact = ?, address = ?, city = ?, country = ? where code = ?`;
-    const result = await pool.query(updateQuery, [
+    const updateQuery = `UPDATE customers SET name = ?, email = ?, contact = ?, address = ?, city = ?, country = ? WHERE code = ?`;
+    const pool = await SSHDBConnection; 
+    await pool.query(updateQuery, [
       name,
       email,
-      phone,
+      contact,  // corrected from 'phone' to 'contact'
       address,
       city,
       country,
       code,
     ]);
-    res.status(200).json({ message: "Supplier updated successfully." });
+    res.status(200).json({ message: "Customer updated successfully." });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "An error occurred while updating the customer." });
   }
 });
 app.post("/api/delete-supplier", async (req, res) => {
@@ -522,7 +542,7 @@ app.post("/api/delete-supplier", async (req, res) => {
     console.log("cd");
     console.log(supplier);
     console.log(req.body);
-
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM suppliers WHERE code = ?", [supplier.code]);
     res.status(200).json({ message: "Supplier deleted successfully." });
   } catch (error) {
@@ -535,6 +555,7 @@ app.post("/api/delete-customer", async (req, res) => {
       console.log("Deleting Customer with ID:", customers.id);
   
       // Perform the deletion
+      const pool = await SSHDBConnection; 
       await pool.query("Delete FROM customers where id  = ?", [customers.id]);
       await pool.query("commit");
   
@@ -559,6 +580,7 @@ app.post("/api/delete-purchase-order", async (req, res) => {
 
     // Delete from related tables
     console.log("DELETE FROM purchaseorderdetails WHERE poCode = ", poCode);
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM purchaseorderdetails WHERE poCode = ?", [poCode]);
     await pool.query("DELETE FROM purchaseorder WHERE purchaseOrderCode = ?", [poCode]);
 
@@ -599,6 +621,7 @@ app.post("/api/add-supplier", async (req, res) => {
   }
 
   try {
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO suppliers (code, name, email, phone, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [EntryCode, name, email, phone, address, city, country]
@@ -620,6 +643,7 @@ app.post("/api/add-supplier", async (req, res) => {
 
 app.get("/api/get-suppliers", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM suppliers");
     res.status(200).json(rows);
   } catch (error) {
@@ -648,6 +672,7 @@ app.post("/api/add-customer", async (req, res) => {
     });
   }
   try {
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO customers (code, name, email, contact, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [EntryCode, name, email, contact, address, city, country]
@@ -664,6 +689,7 @@ app.post("/api/add-customer", async (req, res) => {
 
 app.get("/api/get-customers", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM customers");
     res.status(200).json(rows);
   } catch (error) {
@@ -675,6 +701,7 @@ app.post("/api/update-code-format", async (req, res) => {
   const { type, prefix, sample, length } = req.body;
   try {
     // await pool.query("UPDATE codeformats SET PreFix = ?,length=? WHERE Code = ?", [prefix, type]);
+    const pool = await SSHDBConnection; 
     await pool.query(
       "UPDATE codeformats SET PreFix = ?, length = ?, Sample = ? WHERE Code = ?",
       [prefix, length, sample, type]
@@ -690,6 +717,7 @@ app.post("/api/update-code-format", async (req, res) => {
 
 app.get("/api/get-code-formats", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM codeformats");
     res.status(200).json(rows);
   } catch (error) {
@@ -698,6 +726,7 @@ app.get("/api/get-code-formats", async (req, res) => {
 });
 
 const generateEntryCode = async (codeType) => {
+  const pool = await SSHDBConnection; 
   const [rows] = await pool.query("SELECT * FROM codeformats WHERE Code = ?", [
     codeType,
   ]);
@@ -722,6 +751,13 @@ app.post("/api/create-purchase-order", async (req, res) => {
   try {
     // Generate a unique code for the purchase order
     const EntryCode = await generateEntryCode(2);
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const qdate = `${year}-${month}-${day}`;
+    const pool = await SSHDBConnection; 
 
     // Insert the purchase order details into the 'purchaseorder' table
     const [result] = await pool.query(
@@ -731,8 +767,8 @@ app.post("/api/create-purchase-order", async (req, res) => {
         supplier.code,
         supplier.name,
         totalCost,
-        new Date(),
-        new Date(),
+        qdate,
+        qdate,
       ]
     );
     console.log("orderDetails:", orderDetails)
@@ -747,7 +783,7 @@ app.post("/api/create-purchase-order", async (req, res) => {
         item.quantity,
         item.cost,
       ]);
-
+      const pool = await SSHDBConnection; 
       // Insert the order details into the 'purchaseorderdetails' table
       await pool.query(
         "INSERT INTO purchaseorderdetails (poCode, ProductCode, productName, qty, cost) VALUES ?",
@@ -763,12 +799,13 @@ app.post("/api/create-purchase-order", async (req, res) => {
     console.error("Error creating purchase order:", error);
     res
       .status(500)
-      .json({ error: "An error occurred while creating the purchase order" });
+      .json({ error: "An error occurred while creating the purchase order " + error });
   }
 });
 
 app.get("/api/get-purchase-orders", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM purchaseorder  ");
     res.status(200).json(rows);
   } catch (error) {
@@ -785,6 +822,7 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
     }
 
     console.log("Executing query:", "SELECT * FROM retailflow.purchaseorderdetails where poCode= ?", [poCode]);
+    const pool = await SSHDBConnection; 
 
     const [rows] = await pool.query("SELECT * FROM retailflow.purchaseorderdetails WHERE poCode = ?", [poCode]);
 
@@ -802,6 +840,7 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
 app.post("/api/get-reciept-entry-code", async (req, res) => {
   try {
     const { codeType } = req.body;
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query(
       "SELECT * FROM codeformats WHERE Code = ?",
       [codeType.codeType]

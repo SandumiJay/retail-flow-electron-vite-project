@@ -50,7 +50,7 @@ const POS1: React.FC = () => {
   const [invoiceItemsList, setInvoiceItemsList] = useState<any>([]);
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [checkoutModalOpen, setCheckoutModalOpen] = useState<boolean>(false);
@@ -267,11 +267,11 @@ const POS1: React.FC = () => {
             <Grid>
               <Grid.Col span={6}>
                 <Text size="lg" weight={500}>Post Date</Text>
-                <DateInput value={value} onChange={setValue} placeholder="Select date" />
+                <DateInput value={postDate} onChange={setPostDate} placeholder="Select date" />
               </Grid.Col>
               <Grid.Col span={6}>
                 <Text size="lg" weight={500}>Due Date</Text>
-                <DateInput value={value} onChange={setValue} placeholder="Select date" />
+                <DateInput value={dueDate} onChange={setDueDate} placeholder="Select date" />
               </Grid.Col>
             </Grid>
           </Card>
@@ -393,15 +393,33 @@ const POS1: React.FC = () => {
       <Modal
         opened={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title="RetailFlow"
+        title="RetailFlow"  size="lg"
       >
         <Stack spacing="xs">
          
           <h3>Cart Summary</h3>
-          <Group>
-          <Text><strong>Customer:</strong> {customerName}</Text>
-          <Text><strong>Contact:</strong> {contactNumber}</Text>
-          </Group>
+          <Grid>
+  <Grid.Col span={6}>
+    <Text>
+      <strong>Post Date:</strong> {postDate ? postDate.toDateString() : "Not selected"}
+    </Text>
+  </Grid.Col>
+  <Grid.Col span={6} style={{ textAlign: 'left' }}>
+    <Text>
+      <strong>Due Date:</strong> {dueDate ? dueDate.toDateString() : "Not selected"}
+    </Text>
+  </Grid.Col>
+  <Grid.Col span={6}>
+    <Text>
+      <strong>Customer:</strong> {customerName}
+    </Text>
+  </Grid.Col>
+  <Grid.Col span={4} style={{ textAlign: 'left' }}>
+    <Text>
+      <strong>Contact:</strong> {contactNumber}
+    </Text>
+  </Grid.Col>
+</Grid>
           <Table mt="sm">
             <Table.Thead striped highlightOnHover>
               <Table.Tr>

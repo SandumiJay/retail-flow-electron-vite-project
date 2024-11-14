@@ -9,6 +9,8 @@ import {
   Table,
   Text,
   TextInput,
+  Divider,
+  Grid,
 } from "@mantine/core";
 import {
   IconEdit,
@@ -68,8 +70,8 @@ const PurchaseOrders: React.FC = () => {
   const [productsDataSet, setProductsDataSet] = React.useState<any>([]);
   const [productAutocompleteList, setProductAutocompleteList] = React.useState<any>([]);
   const [selectedProduct, setSelectedProduct] = React.useState<any>({});
-  const [productCost, setProductCost] = React.useState<any>(0);
-  const [productQuantity, setProductQuantity] = React.useState<any>(0);
+  const [productCost, setProductCost] = React.useState<any>(undefined);
+  const [productQuantity, setProductQuantity] = React.useState<any>(undefined);
   const [receiptRows, setReceiptRows] = React.useState<any>([]);
   const [reciptEntries, setReciptEntries] = React.useState<any>([]);
   const [viewAddItem, setViewAddItem] = React.useState<any>([]);
@@ -88,8 +90,8 @@ const PurchaseOrders: React.FC = () => {
       <Table.Td style={{ textAlign: "left" }}>{product.purchaseOrderCode}</Table.Td>
       <Table.Td style={{ textAlign: "left" }}>{product.SupplierCode}</Table.Td>
       <Table.Td style={{ textAlign: "left" }}>{product.SupplierName}</Table.Td>
-      <Table.Td style={{ textAlign: "left" }}>{product.docDate}</Table.Td>
-      <Table.Td style={{ textAlign: "left" }}>LKR {product.TotalCost.toFixed(2)}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.docDate ? product.docDate.split("T")[0] : ""}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>LKR {product.TotalCost}</Table.Td>
       <Table.Td style={{ display: "flex", justifyContent: "end", gap: "5px" }}>
         <Button 
           color="teal" 
@@ -156,6 +158,7 @@ const PurchaseOrders: React.FC = () => {
         label: element.name,
       }));
       setSupplierList(spl);
+     
     } catch (error) {
       console.log(error);
     }
@@ -166,26 +169,33 @@ const PurchaseOrders: React.FC = () => {
       const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
       const products = response.data;
       setProductsDataSet(products);
-      const spl = products.map((element: any) => element.sku);
-      setProductAutocompleteList(spl);
+      console.log(products)
+  
+      const autocompleteList = products.map((element: any) => `${element.sku} ${element.productName}`);
+      setProductAutocompleteList(autocompleteList);
     } catch (error) {
       console.log(error);
     }
   };
-
  
 
   const handleSupplierSelect = (value: string) => {
     const suppId = value;
-    const selectedSupplier = suppliersDataSet.find((element: any) => {
-      return element.id === parseInt(suppId);
-    });
-    setSelectedSupplier(selectedSupplier);
+    const newSupplier = suppliersDataSet.find((element: any) => element.id === parseInt(suppId));
+  
+    if (newSupplier && newSupplier.id !== selectedSupplier?.id) {
+      setSelectedSupplier(newSupplier);
+    }
+  
+    
   };
 
   const handleProductSelect = (value: string) => {
+    
+  const selectedValue = value;
+  const firstValue = selectedValue.split(' ')[0];
     const seletedProduct = productsDataSet.find((element: any) => {
-      return element.sku === value;
+      return element.sku === firstValue;
     });
     
     setSelectedProduct(seletedProduct);
@@ -274,6 +284,8 @@ const PurchaseOrders: React.FC = () => {
 
   const handleSavePurchaseOrder = async () => {
     try {
+      console.log("reciptEntries");
+      console.log(reciptEntries);
       const response = await axios.post(API_ENPOINTS.CREATE_PURCHASE_ORDER, {
         supplier: selectedSupplier,
         orderDetails: reciptEntries,
@@ -290,6 +302,7 @@ const PurchaseOrders: React.FC = () => {
   const loadPurchaseOrders = async () => {
     try {
       const response = await axios.get(API_ENPOINTS.GET_PURCHASE_ORDERS);
+      console.log(response.data)
       setPurchaseOrders(response.data);
     } catch (error) {
       console.log(error);
@@ -329,7 +342,7 @@ const PurchaseOrders: React.FC = () => {
       <Modal
         opened={viewAddItem === 'add'}
         title={viewAddItem === 'add' ? "New Purchase Order" : "Add New Purchase Order "}
-        size="100%"
+        size="60%"
         radius={0}
         onClose={() => {
           setViewAddItem(false);  
@@ -347,51 +360,97 @@ const PurchaseOrders: React.FC = () => {
             onChange={handleSupplierSelect}
           />
          
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-  <tbody>
-    <tr>
-      <td><Text>Supplier Code:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.code}</Text></td>
-      <td><Text>Supplier Name:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.name}</Text></td>
-      <td><Text>Email:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.email}</Text></td>
-      <td><Text>Phone:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.phone}</Text></td>
-      <td><Text>Address:</Text></td>
-      <td>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.address},</Text>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.city},</Text>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.country}.</Text>
-      </td>
-    </tr>
-  </tbody>
-</table>
+         <Table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 10px" }}>
+  <Table.Tbody>
+    <Table.Tr>
+      <Flex justify="space-between" style={{ width: "100%" }}>
+        
+        {/* Left Column: Supplier Code and Name */}
+        <Flex direction="column" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Supplier Code:</Text>
+            <Text size="sm">{selectedSupplier.code}</Text>
+          </Group>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Supplier Name:</Text>
+            <Text size="sm">{selectedSupplier.name}</Text>
+          </Group>
+        </Flex>
+
+        {/* Middle Column: Email and Phone */}
+        <Flex direction="column" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Email:</Text>
+            <Text size="sm">{selectedSupplier.email}</Text>
+          </Group>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Phone:</Text>
+            <Text size="sm">{selectedSupplier.phone}</Text>
+          </Group>
+        </Flex>
+
+        {/* Right Column: Address */}
+        <Flex direction="column" align="flex-start" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Address:</Text>
+            <Text size="sm">{selectedSupplier.address}</Text>
+          </Group>
+          <Group justify="flex-start">
+          <Text color="dimmed" size="sm">City:</Text>
+            <Text size="sm">{selectedSupplier.city}</Text>
+          </Group>
+          <Group justify="flex-start">
+          <Text color="dimmed" size="sm">Country:</Text>
+            <Text size="sm">{selectedSupplier.country}</Text>
+          </Group>
+        </Flex>
+
+      </Flex>
+    </Table.Tr>
+  </Table.Tbody>
+</Table>
         
 
-          <Autocomplete
-            label="Select Product"
-            data={productAutocompleteList}
-            onChange={handleProductSelect}
-          />
-           <TextInput
-            label="Product"
-            type="text"
-            value={productName}
-            readOnly
-          />
-          <TextInput
-            label="Quantity"
-            type="number"
-            value={productQuantity}
-            onChange={(event) => setProductQuantity(Number(event.currentTarget.value))}
-          />
-           <TextInput
-            label="Cost"
-            type="number"
-            value={productCost}
-            onChange={(event) => setProductCost(Number(event.currentTarget.value))}
-          />
+<Grid gutter="md">
+  {/* Row 1, Column 1: Autocomplete for Product Selection */}
+  <Grid.Col span={6}>
+    <Autocomplete
+      label="Select Product"
+      data={productAutocompleteList}
+      onChange={handleProductSelect}
+    />
+  </Grid.Col>
+
+  {/* Row 1, Column 2: Product Name (Read-only) */}
+  <Grid.Col span={6}>
+    <TextInput
+      label="Product"
+      type="text"
+      value={productName}
+      readOnly
+    />
+  </Grid.Col>
+
+  {/* Row 2, Column 1: Quantity */}
+  <Grid.Col span={6}>
+    <TextInput
+      label="Quantity"
+      type="number"
+      value={productQuantity}
+      onChange={(event) => setProductQuantity(Number(event.currentTarget.value))}
+    />
+  </Grid.Col>
+
+  {/* Row 2, Column 2: Cost */}
+  <Grid.Col span={6}>
+    <TextInput
+      label="Cost"
+      type="number"
+      value={productCost}
+      onChange={(event) => setProductCost(Number(event.currentTarget.value))}
+    />
+  </Grid.Col>
+</Grid>
           <Button onClick={handleAddProductToReciept}>Add Product</Button>
           <Table>
             <thead>
