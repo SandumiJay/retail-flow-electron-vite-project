@@ -30,10 +30,16 @@ CREATE TABLE `products` (
   `intQty` int NOT NULL,
   `cost` decimal(65,2) NOT NULL,
   `price` decimal(65,2) NOT NULL,
-  `image` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `image` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `status` int NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `maxDiscount` decimal(65,2) NOT NULL DEFAULT '0.00',
+  `dicountAllowed` int DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `sku_UNIQUE` (`sku`),
+  CONSTRAINT `check_cost_non_negative` CHECK ((`cost` >= 0)),
+  CONSTRAINT `check_intQty_non_negative` CHECK ((`intQty` >= 0)),
+  CONSTRAINT `check_price_non_negative` CHECK ((`price` >= 0))
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,7 +48,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (8,'SX00014','qwqwq','aaaaaaaaaaaaaaaaewewe',23,0.00,1.00,'',0),(11,'PRD00004','Grapes2','fruits',1,1.00,75.00,'http://localhost:3001/uploads/d304e6f0-b2a5-4d00-8322-3b1add1df596-passengerGreen.png',0);
+INSERT INTO `products` VALUES (11,'PRD00004','Grapes2','Fruits',75,1.00,75.00,'http://localhost:3001/uploads/d304e6f0-b2a5-4d00-8322-3b1add1df596-passengerGreen.png',0,20.00,1),(16,'PRD00016','Apple','Fruits',96,3.50,4.00,NULL,0,0.00,0),(17,'PRD00017','Orange','Fruits',100,4.90,5.00,NULL,0,30.00,1),(18,'PRD00018','Orange','Fruits',100,4.50,5.00,'',0,0.00,0),(19,'PRD00020','Jam','Fruits',0,9.50,10.00,'',0,5.00,1),(20,'PRD00021','qwqwq','Fruits',23,0.00,1.00,'',0,2.00,1),(21,'PRD00022','Ice Cream','Fruits',10000,25.00,28.00,'',0,20.00,1);
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -55,4 +61,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-21  2:23:28
+-- Dump completed on 2024-11-16 17:24:06

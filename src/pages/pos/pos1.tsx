@@ -13,7 +13,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import { DateInput } from "@mantine/dates";
 import axios, { AxiosResponse } from "axios";
 import API_ENPOINTS from "../../API";
@@ -21,6 +21,10 @@ import '@mantine/dates/styles.css';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import emailjs from 'emailjs-com';
+import * as htmlToImage from 'html-to-image';
+import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
+ 
+
 
 
 interface Product {
@@ -66,6 +70,7 @@ const POS1: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>(""); 
   const [maxQty, setMaxQty] = useState<number>(0);
+  const modalRef = useRef<HTMLDivElement>(null);
 
 
   const handleAddToCart = () => {
@@ -192,24 +197,46 @@ const POS1: React.FC = () => {
       console.log(error);
     }
   };
-  const generatePDF = () => {
-    const doc = new jsPDF();
-
+  const generatePDF = async () => {
+    if (!modalRef.current) {
+      alert("Modal content not available for rendering.");
+      return;
+    }
+    try {
+      const dataUrl = await htmlToImage.toPng(modalRef.current);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const margin = 10; // Set desired margin in mm
+      const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2; // Adjust width for margins
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
   
-    doc.text("", 14, 18);
-    doc.autoTable({
-      head: [['Product', 'Quantity', 'Discount', 'Total Price']],
-      body: cart.map((item) => [
-        item.productName,
-        item.quantity,
-        item.discount ? `${item.discount}%` : '0%',
-        `$${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}`,
-      ]),
-    });
-
-    doc.text(`Total: $${cartTotal}`, 14, doc.lastAutoTable.finalY + 10);
-    doc.save("order_summary.pdf");
+      pdf.addImage(dataUrl, "PNG", margin, margin, pdfWidth, pdfHeight);
+      pdf.save("checkout_summary_"+timestamp+".pdf");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to save as PDF.");
+    }
   };
+
+  const saveCheckoutAsPNG = async () => {
+    if (!modalRef.current) {
+      alert("Modal content not available for rendering.");
+      return;
+    }
+    try {
+      const dataUrl = await htmlToImage.toPng(modalRef.current);
+      const link = document.createElement("a");
+      link.download = "checkout_summary.png";
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error capturing modal as PNG:", error);
+      alert("Failed to save as PNG.");
+    }
+  };
+
+
   const sendEmail = (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -345,7 +372,7 @@ const POS1: React.FC = () => {
                     <td>{item.quantity}</td>
                     <td>{item.discount}%</td>
                     <td>${item.price.toFixed(2)}</td>
-                    <td>${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                    <td>${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 0)).toFixed(2)}</td>
                     <td>
                       <Button
                         variant="light"
@@ -395,8 +422,9 @@ const POS1: React.FC = () => {
         onClose={() => setCheckoutModalOpen(false)}
         title="RetailFlow"  size="lg"
       >
+        
         <Stack spacing="xs">
-         
+        <div ref={modalRef}>
           <h3>Cart Summary</h3>
           <Grid>
   <Grid.Col span={6}>
@@ -465,7 +493,8 @@ const POS1: React.FC = () => {
 </Table>
 
           <Text mt="sm"><strong>Payment Instructions:</strong> Please draw the cheque in favor of Anuradha Transport Services.</Text>
-          
+      <br></br>  
+</div>
           <Button color="green" fullWidth mt="md" onClick={handleConfirmCheckout}>
             Confirm Checkout
           </Button>
@@ -478,4 +507,4 @@ const POS1: React.FC = () => {
   );
 };
 
-export default POS1;
+export default POS1;  
