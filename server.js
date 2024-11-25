@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 import { console } from "inspector";
 dotenv.config(); // Load environment variables from a .env file
 import SSHDBConnection from './db.js'; 
+import { saveSessionData,getSessionData } from './utils.js';
 
 const app = express();
 const port = 3001;
@@ -43,28 +44,143 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const createNewUser = async (username, password) => {
+// Create new user in the database
+const createNewUser = async (username, password, email, role) => {
   try {
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const db = await SSHDBConnection; 
+
+    // Establish DB connection
+    const db = await SSHDBConnection;
+
+    // Retrieve role ID
+    const [roleResult] = await db.query("SELECT id FROM userroles WHERE role = ?", [role]);
+    const roleId = roleResult[0]?.id; // Safely access the ID
+
+    if (!roleId) {
+      throw new Error(`Role "${role}" does not exist.`);
+    }
+
+    // Insert user into the database
     const [result] = await db.query(
-      "INSERT INTO users (username, password) VALUES (?, ?)",
-      [username, hashedPassword]
+      "INSERT INTO users (username, password, email, role, roleid) VALUES (?, ?, ?, ?, ?)",
+      [username, hashedPassword, email, role, roleId]
     );
-    return result.insertId;
+
+    return result.insertId; // Return the ID of the newly created user
   } catch (error) {
-    throw new Error(`Failed to create user: ${error.message}`);
+    throw new Error(`Failed to create user: ${error.message +"    " +role}`);
   }
 };
 
-app.get("/api/create-user", async (req, res) => {
-  console.log("req.body:", req.body);
+// API endpoint to create a new user
+app.post("/api/create-user", async (req, res) => {
+  const { username, password, email, role } = req.body;
+
   try {
-    const { username, password } = { username: "admin", password: "admin123" };
-    const userId = await createNewUser(username, password);
-    res.json({ message: "User created successfully", id: userId });
+    // Validate input fields
+    if (!username || !password || !email || !role) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // Create the new user
+    const userId = await createNewUser(username, password, email, role);
+    res.status(201).json({ message: "User created successfully", id: userId });
   } catch (error) {
+    console.error("Error creating user:", error.message);
     res.status(500).json({ message: error.message });
+  }
+});
+app.put("/api/update-user/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // Extract user ID from URL params
+    const { username, email, password, role } = req.body;
+
+    if (!id || !username || !email || !role) {
+      return res.status(400).json({
+        message: "ID, username, email, and role are required to update a user.",
+      });
+    }
+
+    const pool = await SSHDBConnection;
+
+    if (password) {
+      // Hash the password if provided
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updateQuery =
+        "UPDATE users SET username = ?, email = ?, password = ?, role = ? WHERE id = ?";
+      await pool.query(updateQuery, [username, email, hashedPassword, role, id]);
+    } else {
+      // Update without the password
+      const updateQuery =
+        "UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?";
+      await pool.query(updateQuery, [username, email, role, id]);
+    }
+
+    res.status(200).json({ message: "User updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      message: "An error occurred while updating the user.",
+      error: error.message,
+    });
+  }
+});
+
+
+app.delete("/api/delete-user/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // Extract the user ID from the route parameter
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required." });
+    }
+
+    const pool = await SSHDBConnection;
+
+    // Perform the delete operation
+    const result = await pool.query("DELETE FROM users WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      // If no rows were affected, the ID does not exist
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({
+      message: "An error occurred while deleting the user.",
+      error: error.message,
+    });
+  }
+});
+
+app.put("/api/update-user-status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id ) {
+      return res.status(400).json({
+        message: "ID is required to update a user.",
+      });
+    }
+
+    const pool = await SSHDBConnection;
+
+    const updateQuery =
+        "UPDATE users SET status = ? WHERE id = ?";
+      await pool.query(updateQuery, [status, id]);
+   
+
+    res.status(200).json({ message: "User status updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      message: "An error occurred while updating the user.",
+      error: error.message,
+    });
   }
 });
 
@@ -81,6 +197,7 @@ app.post("/api/login", async (req, res) => {
     }
 
     const user = rows[0];
+    saveSessionData('role',user.role)
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -98,9 +215,20 @@ app.post("/api/login", async (req, res) => {
     );
 
     res.json({ message: "Login successful", token });
+    // updateEnv('logged_user', user.role);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" + error });
   }
+});
+
+app.get('/get-the-role', (req, res) => {
+  const role = getSessionData('role');
+
+  if (!role) {
+    return res.status(404).json({ message: 'Role not found' });
+  }
+
+  res.status(200).json({ role });
 });
 
 app.post("/api/create-product-category", async (req, res) => {
@@ -317,6 +445,9 @@ app.get("/api/get-users", upload.single("image"), async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
+
 
 app.get("/api/get-products", async (req, res) => {
   try {
@@ -821,10 +952,10 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
       return res.status(400).json({ error: "poCode is required" });
     }
 
-    console.log("Executing query:", "SELECT * FROM retailflow.purchaseorderdetails where poCode= ?", [poCode]);
+    console.log("Executing query:", "SELECT * FROM purchaseorderdetails where poCode= ?", [poCode]);
     const pool = await SSHDBConnection; 
 
-    const [rows] = await pool.query("SELECT * FROM retailflow.purchaseorderdetails WHERE poCode = ?", [poCode]);
+    const [rows] = await pool.query("SELECT * FROM purchaseorderdetails WHERE poCode = ?", [poCode]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "No purchase order found for the given poCode" });
@@ -833,7 +964,7 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
     res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error " + error });
   }
 });
 

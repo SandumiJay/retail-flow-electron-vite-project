@@ -28,6 +28,11 @@ const API_ENPOINTS =  {
     GET_PURCHASE_ORDERS_DETAILS: `${BASE_URL}/api/get-purchase-orders-details`,
     DELETE_PURCHASE_ORDER: `${BASE_URL}/api/delete-purchase-order`,
     UPDATE_INVENTORY: `${BASE_URL}/api/auto-update-inventory`,
+    CREATE_USER : `${BASE_URL}/api/create-user`,
+    UPDATE_USER : `${BASE_URL}/api/update-user`,
+    DELETE_USER : `${BASE_URL}/api/delete-user`,
+    UPDATE_USER_STATUS : `${BASE_URL}/api/update-user-status`,
+    GET_USER_ROLE : `${BASE_URL}/api/get-user-role`
 }
 
 

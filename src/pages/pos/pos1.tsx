@@ -72,6 +72,22 @@ const POS1: React.FC = () => {
   const [maxQty, setMaxQty] = useState<number>(0);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const customStyles = {
+    content: {
+      top: "50%",
+      left: "50%",
+      right: "auto",
+      bottom: "auto",
+      marginRight: "-50%",
+      transform: "translate(-50%, -50%)",
+      width: "80%",
+      maxHeight: "90vh",
+      overflowY: "auto",
+      border: "2px solid #0044cc",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+  };
+
 
   const handleAddToCart = () => {
     if (selectedProduct) {
@@ -176,17 +192,26 @@ const POS1: React.FC = () => {
     .reduce((acc, item) => acc + calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1), 0)
     .toFixed(2);
 
-  const loadProducts = async () => {
-    try {
-      const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
-      const products = response.data;
-      setProductsDataSet(products);
-      const SKU = products.map((element: any) => element.sku);
-      setProductAutocompleteList(SKU);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    const loadProducts = async () => {
+      try {
+        const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
+        const products = response.data;
+        console.log(products)
+    
+        // Filter products with quantity > 0
+        const availableProducts = products.filter((product: any) => product.intQty > 0);
+        console.log(availableProducts)
+    
+        // Map the filtered products to their SKUs
+        const SKU = availableProducts.map((element: any) => element.sku);
+    
+        // Update state
+        setProductsDataSet(products);
+        setProductAutocompleteList(SKU);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
   const loadCustomer = async () => {
     try {
@@ -197,27 +222,27 @@ const POS1: React.FC = () => {
       console.log(error);
     }
   };
-  const generatePDF = async () => {
-    if (!modalRef.current) {
-      alert("Modal content not available for rendering.");
-      return;
-    }
-    try {
-      const dataUrl = await htmlToImage.toPng(modalRef.current);
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgProps = pdf.getImageProperties(dataUrl);
-      const margin = 10; // Set desired margin in mm
-      const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2; // Adjust width for margins
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
+  // const generatePDF = async () => {
+  //   if (!modalRef.current) {
+  //     alert("Modal content not available for rendering.");
+  //     return;
+  //   }
+  //   try {
+  //     const dataUrl = await htmlToImage.toPng(modalRef.current);
+  //     const pdf = new jsPDF("p", "mm", "a4");
+  //     const imgProps = pdf.getImageProperties(dataUrl);
+  //     const margin = 10; // Set desired margin in mm
+  //     const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2; // Adjust width for margins
+  //     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  //     const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
   
-      pdf.addImage(dataUrl, "PNG", margin, margin, pdfWidth, pdfHeight);
-      pdf.save("checkout_summary_"+timestamp+".pdf");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Failed to save as PDF.");
-    }
-  };
+  //     pdf.addImage(dataUrl, "PNG", margin, margin, pdfWidth, pdfHeight);
+  //     pdf.save("checkout_summary_"+timestamp+".pdf");
+  //   } catch (error) {
+  //     console.error("Error generating PDF:", error);
+  //     alert("Failed to save as PDF.");
+  //   }
+  // };
 
   const saveCheckoutAsPNG = async () => {
     if (!modalRef.current) {
@@ -255,6 +280,147 @@ const POS1: React.FC = () => {
         console.log('Failed to send email:', error);
         alert("Failed to send email.");
       });
+  };
+
+  
+
+  const generatePDF = async () => {
+    if (!modalRef.current) return alert("No content to render.");
+    try {
+      const dataUrl = await htmlToImage.toPng(modalRef.current);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const width = pdf.internal.pageSize.getWidth();
+      const height = (imgProps.height * width) / imgProps.width;
+      pdf.addImage(dataUrl, "PNG", 0, 0, width, height);
+      pdf.save(`Invoice_${Date.now()}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
+  };
+
+  const renderInvoiceTemplate = () => {
+    const rows = cart.map(
+      (item) =>
+        `<tr>
+          <td>${item.quantity}</td>
+          <td>${item.productName}</td>
+          <td>${item.discount}%</td>
+          <td>${item.price.toFixed(2)}</td>
+          <td>${calculateDiscountedPrice(item.price, item.discount || 0).toFixed(2)}</td>
+        </tr>`
+    );
+
+    return `
+     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .invoice-container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: white;
+            border: 2px solid #0044cc;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            color: #0044cc;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .contact-info {
+            text-align: center;
+            font-size: 12px;
+            color: #000;
+        }
+        .details {
+            margin-top: 20px;
+        }
+        .details table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .details th, .details td {
+            text-align: left;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .details th {
+            background-color: #0044cc;
+            color: white;
+        }
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #000;
+        }
+        .signature {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+      <div class="invoice-container">
+        <div class="header">ANURADHA TRANSPORT SERVICES</div>
+        <div class="contact-info">
+            <p>No. 219, Nawana, Mirigama</p>
+            <p>Tel: 077 898 929 | 0770 584 959 | 0772 898 929</p>
+        </div>
+        <div class="details">
+            <table>
+                <tr>
+                    <td><b>Invoice No:</b> INV-${new Date().getTime()}</td>
+                    <td><b>Date:</b> ${postDate ? postDate.toDateString() : "N/A"}</td>
+                    <td><b>Due On:</b> ${dueDate ? dueDate.toDateString() : "N/A"}</td>
+                </tr>
+                <tr>
+                    <td colspan="3"><b>Customer:</b> ${customerName} - ${contactNumber}</td>
+                </tr>
+                <tr>
+                    <td colspan="3"><b>Address:</b> ${selectedCustomer?.address || "N/A"}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="details">
+            <table>
+                <tr>
+                    <th>Qty</th>
+                    <th>Description</th>
+                    <th>Discount</th>
+                    <th>Unit Price</th>
+                    <th>Amount (Rs.)</th>
+                </tr>
+                ${rows.join("")}
+            </table>
+        </div>
+        <div class="totals">
+            <p><b>Gross Total:</b> Rs. ${cartTotal}</p>
+            <p><b>Discount:</b> Rs. ${discount}</p>
+            <p><b>Net Total:</b> Rs. ${cartTotal}</p>
+        </div>
+        <div class="footer">
+            <p>PLEASE DRAW THE CHEQUE IN FAVOUR OF ANURADHA TRANSPORT SERVICES</p>
+        </div>
+        <div class="signature">
+            <p>Checked by: ____________________________</p>
+            <p>Customer: ____________________________</p>
+        </div>
+    </div>
+    `;
+
+
+
   };
 
 
@@ -417,7 +583,7 @@ const POS1: React.FC = () => {
         </Grid.Col>
       </Grid>
 
-      <Modal
+      {/* <Modal
         opened={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
         title="RetailFlow"  size="lg"
@@ -502,6 +668,12 @@ const POS1: React.FC = () => {
           <Button mt="md" fullWidth color="teal" onClick={sendEmail}>Send Email</Button>
      
         </Stack>
+      </Modal> */}
+
+<Modal opened={checkoutModalOpen} onClose={() => setCheckoutModalOpen(false)} size="lg" style={customStyles}>
+        <div ref={modalRef} dangerouslySetInnerHTML={{ __html: renderInvoiceTemplate() }} />
+        <br></br>  
+        <Button onClick={generatePDF}>Export as PDF</Button>
       </Modal>
     </Container>
   );

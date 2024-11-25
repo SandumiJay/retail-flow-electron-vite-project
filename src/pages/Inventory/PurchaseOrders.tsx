@@ -69,7 +69,7 @@ const PurchaseOrders: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = React.useState<any>({});
   const [productsDataSet, setProductsDataSet] = React.useState<any>([]);
   const [productAutocompleteList, setProductAutocompleteList] = React.useState<any>([]);
-  const [selectedProduct, setSelectedProduct] = React.useState<any>({});
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [productCost, setProductCost] = React.useState<any>(undefined);
   const [productQuantity, setProductQuantity] = React.useState<any>(undefined);
   const [receiptRows, setReceiptRows] = React.useState<any>([]);
@@ -77,7 +77,6 @@ const PurchaseOrders: React.FC = () => {
   const [viewAddItem, setViewAddItem] = React.useState<any>([]);
   const [totalCost, setTotalCost] = React.useState<Number>(0);
   const [isPosted, setIsPosted] = React.useState(false);
-  const [selectedProducts, setSelectedProducts] = React.useState<any[]>([]);
   const [productCounter, setProductCounter] = React.useState<number>(1);
   const [purchaseOrdersDetails, setPurchaseOrdersDeatils] = React.useState<any[]>([]);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<any>(null);
@@ -216,9 +215,10 @@ const PurchaseOrders: React.FC = () => {
       setProductCounter((prevCounter) => prevCounter + 1);
       setReciptEntries((prevEntries: any) => [...prevEntries, newEntry]);
       setTotalCost((prevTotalCost: any) => Number(prevTotalCost) + Number(productCost) * Number(productQuantity));
-      setSelectedProduct({});
-      setProductCost(0);
-      setProductQuantity(0);
+      
+      setSelectedProduct(null);
+      setProductCost('');
+      setProductQuantity('');
     }
     else{
       alert(`Product or Product Quantitiy Empty`);
@@ -413,26 +413,31 @@ const PurchaseOrders: React.FC = () => {
 
 <Grid gutter="md">
   {/* Row 1, Column 1: Autocomplete for Product Selection */}
-  <Grid.Col span={6}>
+  <Grid.Col span={4}>
     <Autocomplete
       label="Select Product"
+      value ={selectedProduct}
       data={productAutocompleteList}
-      onChange={handleProductSelect}
+      onChange={(val)=>{
+        setSKU(val.split(' ')[0]);
+        setProductName(val.split(' ')[1]);
+        handleProductSelect
+      }}
     />
   </Grid.Col>
 
   {/* Row 1, Column 2: Product Name (Read-only) */}
-  <Grid.Col span={6}>
+  {/* <Grid.Col span={6}>
     <TextInput
       label="Product"
       type="text"
       value={productName}
       readOnly
     />
-  </Grid.Col>
+  </Grid.Col> */}
 
   {/* Row 2, Column 1: Quantity */}
-  <Grid.Col span={6}>
+  <Grid.Col span={4}>
     <TextInput
       label="Quantity"
       type="number"
@@ -442,7 +447,7 @@ const PurchaseOrders: React.FC = () => {
   </Grid.Col>
 
   {/* Row 2, Column 2: Cost */}
-  <Grid.Col span={6}>
+  <Grid.Col span={4}>
     <TextInput
       label="Cost"
       type="number"

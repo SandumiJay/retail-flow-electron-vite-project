@@ -56,7 +56,7 @@ const Products: React.FC = () => {
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const [originalImage, setOriginalImage] = React.useState<string | null>(null);
   const [showMaxDiscount, setShowMaxDiscount] = React.useState(false);
-  const [maxDiscount, setMaxDiscount] = React.useState(20); 
+  const [maxDiscount, setMaxDiscount] = React.useState(); 
 
   const showErrorNotification = (message: string) => {
     showNotification({
@@ -109,10 +109,10 @@ const Products: React.FC = () => {
       procode: "",
       proname: "",
       category: "",
-      quantity: 0,
-      price: 0,
-      cost: 0,
-      maxDiscount:0,
+      quantity: null,
+      price: null,
+      cost: null,
+      maxDiscount:null,
     },
     validate: {
       proname: (value) => (value ? null : "Product name is required"),
@@ -251,8 +251,8 @@ const Products: React.FC = () => {
         </td>
         <td style={{ textAlign: "left", padding: "10px" }}>{product.category}</td>
         <td style={{ textAlign: "right", padding: "10px" }}>{product.intQty}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>${product.cost.toFixed(2)}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>${product.price.toFixed(2)}</td>
+        <td style={{ textAlign: "right", padding: "10px" }}>LKR {product.cost.toFixed(2)}</td>
+        <td style={{ textAlign: "right", padding: "10px" }}>LKR {product.price.toFixed(2)}</td>
         <td style={{ textAlign: "right", padding: "10px" }}>{product.maxDiscount}%</td>
         <td
           style={{
