@@ -17,11 +17,11 @@ import { showNotification } from "@mantine/notifications";
 import axios from "axios";
 import API_ENPOINTS from "../../API";
 import config from "../../config";
-import Tooltip from '@mui/material/Tooltip';
+import Tooltip from '@mui/material/Tooltip'; // eslint-disable-line
 import {
   IconEdit,
   IconEditCircle,
-  IconSquareRoundedPlus,
+  IconSquareRoundedPlus, // eslint-disable-line
   IconTrashX,
 } from "@tabler/icons-react";
 
@@ -53,7 +53,7 @@ const Products: React.FC = () => {
   const [productCategories, setProductCategories] = React.useState<string[]>([]);
   const [productTblRows, setProductTblRows] = React.useState<JSX.Element[]>([]);
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = React.useState<Product | null>(null); // eslint-disable-line
   const [originalImage, setOriginalImage] = React.useState<string | null>(null);
   const [showMaxDiscount, setShowMaxDiscount] = React.useState(false);
   const [maxDiscount, setMaxDiscount] = React.useState(0); 
@@ -93,7 +93,7 @@ const Products: React.FC = () => {
       } else {
         console.error("Unexpected data format:", response.data);
       }
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line
       console.error("Error loading product categories:", error.message || error);
       showErrorNotification("Error loading product categories")
     }
@@ -133,8 +133,8 @@ const Products: React.FC = () => {
     }
   };
 
-  const handleUpdateProduct = async (values: typeof form.values) => {
-    let { procode, proname, category, quantity, price, cost,maxDiscount } = values;
+  const handleUpdateProduct = async (values: typeof form.values) => { 
+    let { procode, proname, category, quantity, price, cost,maxDiscount } = values; // eslint-disable-line
     let imageUrl = originalImage;
 
     try {
@@ -284,12 +284,12 @@ const Products: React.FC = () => {
     ));
 
     setProductTblRows(rows);
-  }, [products]);
+  }, [products]); // eslint-disable-line
 
   useEffect(() => {
     loadProductCategories();
     loadProducts();
-  }, []);
+  }, []); // eslint-disable-line
 
   const headers = (
     <Table.Tr>

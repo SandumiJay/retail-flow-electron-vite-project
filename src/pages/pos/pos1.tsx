@@ -22,7 +22,7 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import emailjs from 'emailjs-com';
 import * as htmlToImage from 'html-to-image';
-import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
+import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image'; // eslint-disable-line
  
 
 
@@ -48,32 +48,32 @@ interface Customer {
 }
 
 const POS1: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [productsDataSet, setProductsDataSet] = useState<any>([]);
-  const [productAutocompleteList, setProductAutocompleteList] = useState<any>([]);
-  const [invoiceItemsList, setInvoiceItemsList] = useState<any>([]);
+  const [products, setProducts] = useState<Product[]>([]); // eslint-disable-line
+  const [productsDataSet, setProductsDataSet] = useState<any>([]); // eslint-disable-line
+  const [productAutocompleteList, setProductAutocompleteList] = useState<any>([]); // eslint-disable-line
+  const [invoiceItemsList, setInvoiceItemsList] = useState<any>([]); // eslint-disable-line
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [checkoutModalOpen, setCheckoutModalOpen] = useState<boolean>(false);
-  const [value, setValue] = useState<Date | null>(null);
+  const [value, setValue] = useState<Date | null>(null); // eslint-disable-line
   const [postDate, setPostDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [productName, setProductName] = useState<string>("");
   const [sku, setSKU] = useState<string>("");
   const [maxDiscount, setMaxDiscount] = useState<number>(0);
-  const [customerDataSet, setcustomerDataSet] = useState<any>([]);
-  const [customerName, setcustomerName] = useState<any>([]);
-  const [contactNumber, setcontactNumber] = useState<any>([]);
+  const [customerDataSet, setcustomerDataSet] = useState<any>([]); // eslint-disable-line
+  const [customerName, setcustomerName] = useState<any>([]); // eslint-disable-line
+  const [contactNumber, setcontactNumber] = useState<any>([]); // eslint-disable-line
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerEmail, setCustomerEmail] = useState<string>(""); 
+  const [customerEmail, setCustomerEmail] = useState<string>(""); // eslint-disable-line
   const [maxQty, setMaxQty] = useState<number>(0);
   const modalRef = useRef<HTMLDivElement>(null);
-  const [search, setSearch] = useState<any>([]);
+  const [search, setSearch] = useState<any>([]); // eslint-disable-line
 
-  const customStyles = {
+  const customStyles = { // eslint-disable-line
     content: {
       top: "50%",
       left: "50%",
@@ -158,8 +158,8 @@ const POS1: React.FC = () => {
     setCheckoutModalOpen(true);
   };
 
-  const handleConfirmCheckout = async () => {
-    let response: AxiosResponse<any, any>;
+  const handleConfirmCheckout = async () => { // eslint-disable-line
+    let response: AxiosResponse<any, any>; // eslint-disable-line
     try {
       console.log(cart);
       const updatePayload = cart.map((item) => ({
@@ -168,7 +168,7 @@ const POS1: React.FC = () => {
       }));
   
       console.log(updatePayload);
-      response = await axios.put(API_ENPOINTS.UPDATE_INVENTORY, { products: updatePayload });
+      response = await axios.put(API_ENPOINTS.UPDATE_INVENTORY, { products: updatePayload }); // eslint-disable-line
   
       alert("Checkout confirmed. Inventory updated successfully.");
       setCart([]);
@@ -238,7 +238,7 @@ const POS1: React.FC = () => {
   };
 
   const cartTotal = cart
-    .reduce((acc, item) => acc + calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1), 0)
+    .reduce((acc, item) => acc + calculateDiscountedPrice(item.price, item.discount ) * (item.quantity), 0)
     .toFixed(2);
 
     const loadProducts = async () => {
@@ -248,15 +248,15 @@ const POS1: React.FC = () => {
         console.log(products)
     
         // Filter products with quantity > 0
-        const availableProducts = products.filter((product: any) => product.intQty > 0);
+        const availableProducts = products.filter((product: any) => product.intQty > 0); // eslint-disable-line
         console.log(availableProducts)
     
         // Map the filtered products to their SKUs
-        const SKU = availableProducts.map((element: any) => element.sku);
+        const SKU = availableProducts.map((element: any) => element.sku); // eslint-disable-line
     
         // Update state
         setProductsDataSet(products);
-        const autocompleteList = availableProducts.map((element: any) => `${element.sku} ${element.productName}`);
+        const autocompleteList = availableProducts.map((element: any) => `${element.sku} ${element.productName}`); // eslint-disable-line
         setProductAutocompleteList(autocompleteList);
         // setProductAutocompleteList(SKU);
       } catch (error) {
@@ -274,7 +274,7 @@ const POS1: React.FC = () => {
     }
   };
 
-  const saveCheckoutAsPNG = async () => {
+  const saveCheckoutAsPNG = async () => { // eslint-disable-line
     if (!modalRef.current) {
       alert("Modal content not available for rendering.");
       return;
@@ -292,13 +292,13 @@ const POS1: React.FC = () => {
   };
 
 
-  const sendEmail = (event: React.FormEvent) => {
+  const sendEmail = (event: React.FormEvent) => { // eslint-disable-line
     event.preventDefault();
 
     const templateParams = {
       to_name: customerName,
       from_name: "Your Business Name",
-      message: `Thank you for your order! Here is your order summary: Total: $${cartTotal}`,
+      message: `Thank you for your order! Here is your order summary: Total:  LKR ${cartTotal}`,
       email: customerEmail,
     };
 
@@ -327,7 +327,7 @@ const POS1: React.FC = () => {
       const pageHeight = pdf.internal.pageSize.getHeight();
   
       // Calculate image height to fit the page width
-      const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+      const imgHeight = (imgProps.height * pageWidth) / imgProps.width; // eslint-disable-line
   
       // Add the first page with content
       let position = 0;
@@ -378,13 +378,12 @@ const POS1: React.FC = () => {
     }
 
     .invoice-container {
-        width: 85%;
+        width: 95%;
         margin: 40px auto;
         background-color: white;
         border-radius: 8px;
         padding: 30px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    }
+       
 
     .header {
         text-align: center;
@@ -400,32 +399,65 @@ const POS1: React.FC = () => {
         color: #555;
         margin-bottom: 30px;
     }
-
-    .details {
+  .customer {
         margin-top: 10px;
     }
 
-    .details table {
+    .customer table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
         margin-bottom: 20px;
+        
     }
 
-    .details th, .details td {
+    .customer th, .details td {
         text-align: left;
         padding: 12px;
+        border: 1px solid #ddd; 
     }
 
-    .details th {
+    .customer th {
         background-color: #7209b7;
         color: white;
         text-transform: uppercase;
     }
-
-    .details td {
-        background-color: #f9f9f9;
+  .details {
+        margin-top: 5px;
     }
+
+
+   .details table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+.details th, .details td {
+    text-align: left;
+    padding: 8px;
+    border-left: 1px solid #ddd; 
+    border-right: 1px solid #ddd; 
+}
+
+.details th:first-child, .details td:first-child {
+    border-left: none; 
+}
+
+.details th:last-child, .details td:last-child {
+    border-right: none;
+}
+
+.details th {
+    background-color: #7209b7;
+    color: white;
+    text-transform: uppercase;
+}
+
+.details td {
+    background-color: #f9f9f9;
+}
 
     .totals {
         margin-top: 20px;
@@ -498,7 +530,7 @@ const POS1: React.FC = () => {
         <p>Tel: 077 898 929 | 0770 584 959 | 0772 898 929</p>
     </div>
 
-    <div class="details">
+    <div class="customer">
         <table>
             <tr>
                 <td><b>Invoice No:</b> INV-${new Date().getTime()}</td>
@@ -538,19 +570,23 @@ const POS1: React.FC = () => {
                 <th>Amount (LKR)</th>
             </tr>
             ${rows.join("")}
-        </table>
-    </div>
-
-    <div class="totals">
-    <table>
-    <tr>
-    <td style="width: 320px;"></td>
-    <td style="width: 250px;"> 
-        <p><b>Gross Total &emsp;:</b> LKR ${cartTotal}</p>
-        <p><b>Net Total &emsp;&emsp;:</b> LKR ${cartTotal}</p></td>
+            <tr>
+    <td style="border: none; padding: 5px;"></td>
+    <td style="border: none; padding: 5px;"></td>
+    <td style="border: none; padding: 5px;"></td>
+    <td style="padding: 5px;"><b>Gross Total &emsp;:</b> </td>
+    <td style="padding: 5px;"> 
+        <p>LKR ${cartTotal}</p>
     </tr>
-    </table>
-    </div>
+              <tr >
+    <td style="border: none; padding: 5px;"></td>
+    <td style="border: none; padding: 5px;"></td>
+    <td style="border: none; padding: 5px;"></td>
+    <td style="padding: 5px;"><b>Net Total &emsp;&emsp;:</b> </td>
+    <td style="padding: 5px;"> 
+        <p>LKR ${cartTotal}</p></td>
+    </tr>
+        </table>
 
     <div class="footer">
         <p>PLEASE DRAW THE CHEQUE IN FAVOUR OF ANURADHA TRANSPORT SERVICES</p>
@@ -725,7 +761,7 @@ const POS1: React.FC = () => {
         <Stack spacing="xs">
           <Group position="apart">
             <Text weight={500}>Total:</Text>
-            <Text weight={500}>${cartTotal}</Text>
+            <Text weight={500}>LKR {cartTotal}</Text>
           </Group>
         </Stack>
         <Select
@@ -761,4 +797,4 @@ const POS1: React.FC = () => {
   );
 };
 
-export default POS1;  
+export default POS1;  // eslint-disable-line

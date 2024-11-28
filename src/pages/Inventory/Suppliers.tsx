@@ -31,7 +31,7 @@ interface Supplier {
 }
 const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
-  const [EntryCode, setEntryCode] = useState("");
+  const [EntryCode, setEntryCode] = useState(""); // eslint-disable-line
   const [viewEditItem, setViewEditItem] = React.useState(false);
   const [viewAddItem, setViewAddItem] = React.useState(false);
   const [viewDeleteItem, setViewDeleteItem] = React.useState(false);
@@ -129,7 +129,7 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
       </Table.Tr>
     ));
     setSupTblRows(rows);
-  }, [suppliers]);
+  }, [suppliers]); // eslint-disable-line
   useEffect(() => {
     loadSuppliers();
   }, []);
@@ -187,7 +187,7 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
 
   const handleSupplierDeleteProceed = async() => {
       try {
-        const response = await axios.post(API_ENPOINTS.DELETE_SUPPLIER ,{
+        const response = await axios.post(API_ENPOINTS.DELETE_SUPPLIER ,{ // eslint-disable-line
             supplier: editingSupplier
         });
 

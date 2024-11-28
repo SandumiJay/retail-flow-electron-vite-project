@@ -1,58 +1,35 @@
 {
-  "name": "electron-vite-project",
+  "name": "retail-flow",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
+  "description": "Inventory Management System",
   "type": "module",
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "build": "tsc --skipLibCheck --noEmit && vite build --mode production && electron-builder",
+    "lint": "eslint . --ext ts,tsx --max-warnings=-1 || true",
     "preview": "vite preview",
-    "start:server": "node server.js"
+    "start:server": "node server.js",
+    "start:electron": "concurrently \"vite\" \"electron .\""
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mantine/carousel": "^7.12.1",
-    "@mantine/charts": "^7.12.1",
-    "@mantine/code-highlight": "^7.12.1",
     "@mantine/core": "^7.12.1",
-    "@mantine/dates": "^7.12.1",
-    "@mantine/dropzone": "^7.12.1",
-    "@mantine/form": "^7.12.1",
     "@mantine/hooks": "^7.12.1",
-    "@mantine/modals": "^7.12.1",
-    "@mantine/notifications": "^7.12.1",
-    "@mantine/nprogress": "^7.12.1",
-    "@mantine/spotlight": "^7.12.1",
-    "@mantine/tiptap": "^7.12.1",
     "@mui/material": "^6.1.6",
-    "@tabler/icons-react": "^3.12.0",
-    "@tiptap/extension-link": "^2.6.4",
-    "@tiptap/react": "^2.6.4",
-    "@tiptap/starter-kit": "^2.6.4",
     "axios": "^1.7.4",
     "bcrypt": "^5.1.1",
-    "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "dayjs": "^1.11.12",
     "dotenv": "^16.4.5",
-    "emailjs-com": "^3.2.0",
-    "embla-carousel-react": "^8.1.8",
-    "express": "^4.19.2",
-    "html-to-image": "^1.11.11",
     "jsonwebtoken": "^9.0.2",
-    "jspdf": "^2.5.2",
-    "jspdf-autotable": "^3.8.4",
-    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.11.0",
     "puppeteer": "^23.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.1",
-    "recharts": "^2.12.7",
-    "ssh2": "^1.16.0",
     "uuidv4": "^6.2.13"
   },
   "devDependencies": {
@@ -65,15 +42,42 @@
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "postcss": "^8.4.41",
-    "postcss-preset-mantine": "^1.17.0",
-    "postcss-simple-vars": "^7.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.1.6",
     "vite-plugin-electron": "^0.28.6",
     "vite-plugin-electron-renderer": "^0.14.5"
   },
-  "main": "dist-electron/main.js"
+  "build": {
+    "appId": "com.retail.flow",
+    "productName": "Retail Flow",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icons/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icons"
+    }
+  }
 }

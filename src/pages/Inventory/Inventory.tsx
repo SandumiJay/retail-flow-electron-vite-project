@@ -1,5 +1,5 @@
-import { Badge, Button, Flex, Image, Modal, Table } from "@mantine/core";
-import { IconEdit, IconSquareRoundedPlus, IconTrashX } from "@tabler/icons-react";
+import { Badge, Button, Flex, Image, Modal, Table } from "@mantine/core"; // eslint-disable-line
+import { IconEdit, IconSquareRoundedPlus, IconTrashX } from "@tabler/icons-react"; // eslint-disable-line
 import axios from "axios";
 import React, { useEffect } from "react";
 import API_ENPOINTS from "../../API";

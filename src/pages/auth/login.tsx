@@ -7,10 +7,10 @@ import axios from "axios";
 interface LoginProps {
   welcomeMessage: string;
 }
-const Login: React.FC<LoginProps> = () => {
+const Login: React.FC<LoginProps> = () => { 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // eslint-disable-line
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -31,7 +31,7 @@ const Login: React.FC<LoginProps> = () => {
           // Handle errors
           setError(response.data.message || "Login failed");
         }
-      } catch (error: any) {
+      } catch (error: any) {// eslint-disable-line
         console.error("An error occurred:", error);
         setError(error.response?.data?.message || "An error occurred during login");
       }

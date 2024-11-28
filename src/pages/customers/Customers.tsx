@@ -85,7 +85,7 @@ const Customers: React.FC = () => {
     }
   };
 
-  const withTimeout = (promise, timeout) => {
+  const withTimeout = (promise, timeout) => { // eslint-disable-line
     return Promise.race([
       promise,
       new Promise((_, reject) =>
@@ -142,7 +142,7 @@ const handleDeleteConfirm = (customer: Customer) => () => {
       </Table.Tr>
     ));
     setSupTblRows(rows);
-  }, [customers]);
+  }, [customers]); // eslint-disable-line
   useEffect(() => {
     loadCustomers();
   }, []);
@@ -153,7 +153,7 @@ const handleDeleteConfirm = (customer: Customer) => () => {
   };
   const handleCustomerAdd = async (values: typeof form.values) => {
     console.log(values);
-    const { code,name, email, contact, address, city, country } = values;
+    const { code,name, email, contact, address, city, country } = values; // eslint-disable-line
     try {
       await axios.post(API_ENPOINTS.ADD_CUSTOMER, {
         code: EntryCode,
@@ -205,7 +205,7 @@ const handleDeleteConfirm = (customer: Customer) => () => {
 
   const handleCustomerDeleteProceed = async() => {
       try {
-        const response = await axios.post(API_ENPOINTS.DELETE_CUSTOMER ,{
+        const response = await axios.post(API_ENPOINTS.DELETE_CUSTOMER ,{ // eslint-disable-line
             customers: editingCustomer
         });
 

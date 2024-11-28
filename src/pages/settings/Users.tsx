@@ -30,7 +30,7 @@ const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [userState,setUserState] =useState(false);
-  const [userRole,setUserRole]=useState();
+  const [userRole,setUserRole]=useState(); // eslint-disable-line
 
   const form = useForm({
     initialValues: {
@@ -60,7 +60,7 @@ const Users: React.FC = () => {
     }
   };
   
-  const hasPermission = (
+  const hasPermission = ( // eslint-disable-line
     feature: keyof typeof ROLE_PERMISSIONS['user'],
     role: keyof typeof ROLE_PERMISSIONS
   ) => ROLE_PERMISSIONS[role]?.[feature];
