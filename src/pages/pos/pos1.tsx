@@ -71,6 +71,7 @@ const POS1: React.FC = () => {
   const [customerEmail, setCustomerEmail] = useState<string>(""); 
   const [maxQty, setMaxQty] = useState<number>(0);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState<any>([]);
 
   const customStyles = {
     content: {
@@ -89,18 +90,65 @@ const POS1: React.FC = () => {
   };
 
 
+  // const handleAddToCart = () => {
+  //   if (selectedProduct) {
+  //     setCart((prev) => [...prev, { ...selectedProduct, quantity, discount }]);
+  //     setQuantity(0);
+  //     setSelectedProduct(null);
+  //     setProductName("");
+  //     setSKU("");
+  //     setDiscount(0);
+  //   } else {
+  //     alert("Please select a product.");
+  //   }
+  // };
+
   const handleAddToCart = () => {
-    if (selectedProduct) {
-      setCart((prev) => [...prev, { ...selectedProduct, quantity, discount }]);
-      setQuantity(0);
-      setSelectedProduct(null);
-      setProductName("");
-      setSKU("");
-      setDiscount(0);
-    } else {
+
+
+    if (!selectedProduct) {
       alert("Please select a product.");
+      return;
     }
+    console.log(selectedProduct)
+    // Find if the product already exists in the cart
+    const existingProduct = cart.find((item) => item.id === selectedProduct.id);
+  
+    // Calculate the total quantity after the addition
+    const totalQuantity = existingProduct
+      ? existingProduct.quantity + quantity
+      : quantity;
+  
+    // Check if the total exceeds the maximum allowed quantity
+    console.log
+    if (totalQuantity > maxQty) {
+      alert(`Cannot add more than ${maxQty} of ${selectedProduct.productName}`);
+      return; // Prevent adding to the cart
+    }
+  
+    // Update the cart
+    setCart((prev) => {
+      if (existingProduct) {
+        // Update the quantity for the existing product
+        return prev.map((item) =>
+          item.id === selectedProduct.id
+            ? { ...item, quantity: item.quantity + quantity}
+            : item
+        );
+      } else {
+        // Add the new product to the cart
+        return [...prev, { ...selectedProduct, quantity, discount }];
+      }
+    });
+  
+    // Reset the form fields
+    setQuantity(0);
+    setSelectedProduct(null);
+    setProductName("");
+    setSKU("");
+    setDiscount(0);
   };
+  
 
   const handleRemoveFromCart = (index: number) => {
     setCart((prev) => prev.filter((_, i) => i !== index));
@@ -134,6 +182,7 @@ const POS1: React.FC = () => {
   };
 
   const handleProductSelect = (sku: string) => {
+    sku =sku.split(' ')[0]
     const product = productsDataSet.find((p) => p.sku === sku);
     if (product) {
       setSelectedProduct(product);
@@ -156,7 +205,7 @@ const POS1: React.FC = () => {
       setMaxDiscount(product.maxDiscount);
       if (val !== undefined) {
         if (val > maxDiscount) {
-          alert(`Discount cannot exceed ${maxDiscount}%`);
+          alert(`Discount cannot exceed LKR ${maxDiscount}%`);
           setDiscount(maxDiscount);
         } else {
           setDiscount(val);
@@ -207,7 +256,9 @@ const POS1: React.FC = () => {
     
         // Update state
         setProductsDataSet(products);
-        setProductAutocompleteList(SKU);
+        const autocompleteList = availableProducts.map((element: any) => `${element.sku} ${element.productName}`);
+        setProductAutocompleteList(autocompleteList);
+        // setProductAutocompleteList(SKU);
       } catch (error) {
         console.log(error);
       }
@@ -222,27 +273,6 @@ const POS1: React.FC = () => {
       console.log(error);
     }
   };
-  // const generatePDF = async () => {
-  //   if (!modalRef.current) {
-  //     alert("Modal content not available for rendering.");
-  //     return;
-  //   }
-  //   try {
-  //     const dataUrl = await htmlToImage.toPng(modalRef.current);
-  //     const pdf = new jsPDF("p", "mm", "a4");
-  //     const imgProps = pdf.getImageProperties(dataUrl);
-  //     const margin = 10; // Set desired margin in mm
-  //     const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2; // Adjust width for margins
-  //     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-  //     const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
-  
-  //     pdf.addImage(dataUrl, "PNG", margin, margin, pdfWidth, pdfHeight);
-  //     pdf.save("checkout_summary_"+timestamp+".pdf");
-  //   } catch (error) {
-  //     console.error("Error generating PDF:", error);
-  //     alert("Failed to save as PDF.");
-  //   }
-  // };
 
   const saveCheckoutAsPNG = async () => {
     if (!modalRef.current) {
@@ -286,18 +316,45 @@ const POS1: React.FC = () => {
 
   const generatePDF = async () => {
     if (!modalRef.current) return alert("No content to render.");
+  
     try {
       const dataUrl = await htmlToImage.toPng(modalRef.current);
+      if (!dataUrl) return alert("Failed to generate image.");
+  
       const pdf = new jsPDF("p", "mm", "a4");
       const imgProps = pdf.getImageProperties(dataUrl);
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (imgProps.height * width) / imgProps.width;
-      pdf.addImage(dataUrl, "PNG", 0, 0, width, height);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+  
+      // Calculate image height to fit the page width
+      const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+  
+      // Add the first page with content
+      let position = 0;
+      const maxHeight = pageHeight - 20; // Adjust for some margin
+  
+      // Loop to add content, breaking into pages when necessary
+      while (position < imgProps.height) {
+        const currentPageHeight = Math.min(imgProps.height - position, maxHeight);
+  
+        pdf.addImage(dataUrl, "PNG", 0, position, pageWidth, currentPageHeight);
+  
+        position += currentPageHeight;
+  
+        // Only add a new page if there is more content to display
+        if (position < imgProps.height) {
+          pdf.addPage();
+        }
+      }
+  
+      // Save the PDF
       pdf.save(`Invoice_${Date.now()}.pdf`);
     } catch (error) {
       console.error("Error generating PDF:", error);
     }
   };
+  
+  
 
   const renderInvoiceTemplate = () => {
     const rows = cart.map(
@@ -307,116 +364,204 @@ const POS1: React.FC = () => {
           <td>${item.productName}</td>
           <td>${item.discount}%</td>
           <td>${item.price.toFixed(2)}</td>
-          <td>${calculateDiscountedPrice(item.price, item.discount || 0).toFixed(2)}</td>
+          <td>${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 0)).toFixed(2)}</td>
         </tr>`
     );
 
     return `
-     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-        }
+    <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f6f9;
+    }
+
+    .invoice-container {
+        width: 85%;
+        margin: 40px auto;
+        background-color: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+        text-align: center;
+        color: #7209b7;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .contact-info {
+        text-align: center;
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 30px;
+    }
+
+    .details {
+        margin-top: 10px;
+    }
+
+    .details table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-bottom: 20px;
+    }
+
+    .details th, .details td {
+        text-align: left;
+        padding: 12px;
+    }
+
+    .details th {
+        background-color: #7209b7;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    .details td {
+        background-color: #f9f9f9;
+    }
+
+    .totals {
+        margin-top: 20px;
+        font-size: 12px;
+        text-align: auto;
+    }
+
+    .totals p {
+        margin: 10px 0;
+    }
+
+    .totals b {
+        font-weight: 600;
+    }
+
+    .footer {
+        margin-top: 40px;
+        text-align: center;
+        font-size: 14px;
+        color: #777;
+    }
+
+    .signature {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .signature p {
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+        width: 45%;
+        text-align: center;
+    }
+
+    .button {
+        display: inline-block;
+        background-color: #0044cc;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 4px;
+        margin-top: 20px;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .button:hover {
+        background-color: #0033a0;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
         .invoice-container {
-            width: 80%;
-            margin: 20px auto;
-            background-color: white;
-            border: 2px solid #0044cc;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            color: #0044cc;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .contact-info {
-            text-align: center;
-            font-size: 12px;
-            color: #000;
-        }
-        .details {
-            margin-top: 20px;
-        }
-        .details table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        .details th, .details td {
-            text-align: left;
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .details th {
-            background-color: #0044cc;
-            color: white;
-        }
-        .totals {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 14px;
-        }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 12px;
-            color: #000;
+            width: 95%;
         }
         .signature {
-            margin-top: 20px;
-            text-align: left;
+            flex-direction: column;
+            align-items: center;
         }
-    </style>
-      <div class="invoice-container">
-        <div class="header">ANURADHA TRANSPORT SERVICES</div>
-        <div class="contact-info">
-            <p>No. 219, Nawana, Mirigama</p>
-            <p>Tel: 077 898 929 | 0770 584 959 | 0772 898 929</p>
-        </div>
-        <div class="details">
-            <table>
-                <tr>
-                    <td><b>Invoice No:</b> INV-${new Date().getTime()}</td>
-                    <td><b>Date:</b> ${postDate ? postDate.toDateString() : "N/A"}</td>
-                    <td><b>Due On:</b> ${dueDate ? dueDate.toDateString() : "N/A"}</td>
-                </tr>
-                <tr>
-                    <td colspan="3"><b>Customer:</b> ${customerName} - ${contactNumber}</td>
-                </tr>
-                <tr>
-                    <td colspan="3"><b>Address:</b> ${selectedCustomer?.address || "N/A"}</td>
-                </tr>
-            </table>
-        </div>
-        <div class="details">
-            <table>
-                <tr>
-                    <th>Qty</th>
-                    <th>Description</th>
-                    <th>Discount</th>
-                    <th>Unit Price</th>
-                    <th>Amount (Rs.)</th>
-                </tr>
-                ${rows.join("")}
-            </table>
-        </div>
-        <div class="totals">
-            <p><b>Gross Total:</b> Rs. ${cartTotal}</p>
-            <p><b>Discount:</b> Rs. ${discount}</p>
-            <p><b>Net Total:</b> Rs. ${cartTotal}</p>
-        </div>
-        <div class="footer">
-            <p>PLEASE DRAW THE CHEQUE IN FAVOUR OF ANURADHA TRANSPORT SERVICES</p>
-        </div>
-        <div class="signature">
-            <p>Checked by: ____________________________</p>
-            <p>Customer: ____________________________</p>
-        </div>
+    }
+</style>
+
+<div class="invoice-container">
+    <div class="header">ANURADHA TRANSPORT SERVICES</div>
+    <div class="contact-info">
+        <p>No. 219, Nawana, Mirigama</p>
+        <p>Tel: 077 898 929 | 0770 584 959 | 0772 898 929</p>
     </div>
+
+    <div class="details">
+        <table>
+            <tr>
+                <td><b>Invoice No:</b> INV-${new Date().getTime()}</td>
+                <td><b>Date:</b> ${postDate ? postDate.toDateString() : "N/A"} | <b>Due On:</b> ${dueDate ? dueDate.toDateString() : "N/A"}</td>
+            </tr>
+            <tr>
+                <td><b>Brown & Company PLC</b>
+                <br>
+                Pharmacutical Division
+                <br>
+                34, Sir Mohomed Macan Marker Mawatha
+                <br>
+                Colombo 03
+                <br>
+                Tel : 011 266 3000 
+                </td>
+                <td><b>Customer:</b> ${customerName} 
+                <br>
+                <b>Contact Number:</b>${contactNumber}
+                <br>
+                <b>Address:</b> ${selectedCustomer?.address || "N/A"}
+                </td>
+        
+            </tr>
+              
+           
+        </table>
+    </div>
+
+    <div class="details">
+        <table>
+            <tr>
+                <th>Qty</th>
+                <th>Description</th>
+                <th>Discount</th>
+                <th>Unit Price (LKR)</th>
+                <th>Amount (LKR)</th>
+            </tr>
+            ${rows.join("")}
+        </table>
+    </div>
+
+    <div class="totals">
+    <table>
+    <tr>
+    <td style="width: 320px;"></td>
+    <td style="width: 250px;"> 
+        <p><b>Gross Total &emsp;:</b> LKR ${cartTotal}</p>
+        <p><b>Net Total &emsp;&emsp;:</b> LKR ${cartTotal}</p></td>
+    </tr>
+    </table>
+    </div>
+
+    <div class="footer">
+        <p>PLEASE DRAW THE CHEQUE IN FAVOUR OF ANURADHA TRANSPORT SERVICES</p>
+    </div>
+
+    <div class="signature">
+        <p>Checked by: ____________________________</p>
+        <p>Customer: ____________________________</p>
+    </div>
+
+</div>
     `;
 
 
@@ -430,252 +575,189 @@ const POS1: React.FC = () => {
   }, []);
 
   return (
-    <Container fluid>
-      
-      <Grid>
-
-      <Grid.Col span={12}>
-          <Card padding="lg" shadow="sm">
-            <Grid>
-              <Grid.Col span={6}>
-                <Text size="lg" weight={500}>Customer Name</Text>
-                <TextInput value={customerName} placeholder="Customer Name" readOnly/>
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <Text size="lg" weight={500}>Contact Number</Text>
-                <Autocomplete
-                  data={customerDataSet.map((customer: Customer) => customer.contact)}
-                  value={contactNumber}
-                  onChange={(val) => {
-                    setcontactNumber(val);
-                    handleCustomerSelect(val);
-                  }}
-                  placeholder="Contact Number"
-                />              </Grid.Col>
-            </Grid>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Card padding="lg" shadow="sm">
-            <Grid>
-              <Grid.Col span={6}>
-                <Text size="lg" weight={500}>Post Date</Text>
-                <DateInput value={postDate} onChange={setPostDate} placeholder="Select date" />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <Text size="lg" weight={500}>Due Date</Text>
-                <DateInput value={dueDate} onChange={setDueDate} placeholder="Select date" />
-              </Grid.Col>
-            </Grid>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={8}>
-          <Card padding="lg" shadow="sm">
-            <Stack spacing="sm">
-              <Grid>
-                <Group>
-                  <Grid.Col span={3}>
-                    <Text size="lg" weight={500}>SKU:</Text>
-                    <Autocomplete
-                      data={productAutocompleteList}
-                      value={sku}
-                      onChange={(val) => {
-                        setSKU(val);
-                        handleProductSelect(val);
-                      }}
-                      placeholder="Select SKU"
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Text size="lg" weight={500}>Product Name:</Text>
-                    <TextInput value={productName} readOnly />
-                  </Grid.Col>
-                  <Grid.Col span={2}>
-                      <Text size="lg" weight={500}>Qty:</Text>
-                      <NumberInput 
-                        value={quantity} 
-                        onChange={(val) => {
-                          handleQtyChange(val);
-                          setQuantity(val);
-                          
-                        }} 
-                        min={0} 
-                        max={maxQty}
-                       />
-                    </Grid.Col>
-                  <Grid.Col span={2}>
-                    <Text size="lg" weight={500}>Discount:</Text>
-                    <NumberInput
-                      value={discount}
-                      onChange={handleDiscountChange}
-                      min={0}
-                      max={maxDiscount}
-                    />
-                  </Grid.Col>
-                </Group>
-              </Grid>
-              <Button color="green" onClick={handleAddToCart}>Add to Cart</Button>
-            </Stack>
-
-            <Table mt="md">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Discount</th>
-                  <th>Price</th>
-                  <th>Discounted Price</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cart.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.sku}</td>
-                    <td>{item.productName}</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.discount}%</td>
-                    <td>${item.price.toFixed(2)}</td>
-                    <td>${(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 0)).toFixed(2)}</td>
-                    <td>
-                      <Button
-                        variant="light"
-                        color="red"
-                        onClick={() => handleRemoveFromCart(index)}
-                      >
-                        Remove
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={4}>
-          <Card padding="lg" shadow="sm">
-            <Text size="lg" weight={500}>Cart Summary</Text>
-            {cart.length === 0 && <Text>No items in cart</Text>}
-            <Stack spacing="xs">
-              <Group position="apart">
-                <Text weight={500}>Total:</Text>
-                <Text weight={500}>${cartTotal}</Text>
-              </Group>
-            </Stack>
-            <Select
-              label="Payment Method"
-              value={paymentMethod}
-              onChange={setPaymentMethod}
-              data={[
-                { value: "cash", label: "Cash" },
-                { value: "card", label: "Card" },
-                { value: "online", label: "Online" },
-              ]}
-              mt="md"
+<Container fluid>
+  <Grid>
+    <Grid.Col span={12}>
+      <Card padding="lg" shadow="sm">
+        <Grid>
+          <Grid.Col span={4}>
+            <Text size="lg" weight={500}>Search</Text>
+            <Autocomplete
+              data={customerDataSet.map((customer: Customer) => `${customer.contact} ${customer.name}`)}
+              value={search}
+              onChange={(val) => {
+                setSearch(val);
+                handleCustomerSelect(val);
+                setcustomerName(val.split(' ')[1]);
+                setcontactNumber(val.split(' ')[0]);
+              }}
+              placeholder="Contact Number"
             />
-            <Button onClick={handleCheckout} fullWidth mt="md">
-              Checkout
-            </Button>
-          </Card>
-        </Grid.Col>
-      </Grid>
+          </Grid.Col>
+          <Grid.Col span={4}>
+            <Text size="lg" weight={500}>Customer Name</Text>
+            <TextInput value={customerName} placeholder="Customer Name" readOnly />
+          </Grid.Col>
+          <Grid.Col span={4}>
+            <Text size="lg" weight={500}>Contact Number</Text>
+            <TextInput value={contactNumber} placeholder="Contact Number" readOnly />
+          </Grid.Col>
+        </Grid>
+      </Card>
+    </Grid.Col>
 
-      {/* <Modal
-        opened={checkoutModalOpen}
-        onClose={() => setCheckoutModalOpen(false)}
-        title="RetailFlow"  size="lg"
-      >
-        
-        <Stack spacing="xs">
-        <div ref={modalRef}>
-          <h3>Cart Summary</h3>
+    <Grid.Col span={12}>
+      <Card padding="lg" shadow="sm">
+        <Grid>
+          <Grid.Col span={6}>
+            <Text size="lg" weight={500}>Post Date</Text>
+            <DateInput value={postDate} onChange={setPostDate} placeholder="Select date" />
+          </Grid.Col>
+          <Grid.Col span={6}>
+            <Text size="lg" weight={500}>Due Date</Text>
+            <DateInput value={dueDate} onChange={setDueDate} placeholder="Select date" />
+          </Grid.Col>
+        </Grid>
+      </Card>
+    </Grid.Col>
+
+    <Grid.Col span={8}>
+      <Card padding="lg" shadow="sm">
+        <Stack spacing="sm">
           <Grid>
-  <Grid.Col span={6}>
-    <Text>
-      <strong>Post Date:</strong> {postDate ? postDate.toDateString() : "Not selected"}
-    </Text>
-  </Grid.Col>
-  <Grid.Col span={6} style={{ textAlign: 'left' }}>
-    <Text>
-      <strong>Due Date:</strong> {dueDate ? dueDate.toDateString() : "Not selected"}
-    </Text>
-  </Grid.Col>
-  <Grid.Col span={6}>
-    <Text>
-      <strong>Customer:</strong> {customerName}
-    </Text>
-  </Grid.Col>
-  <Grid.Col span={4} style={{ textAlign: 'left' }}>
-    <Text>
-      <strong>Contact:</strong> {contactNumber}
-    </Text>
-  </Grid.Col>
-</Grid>
-          <Table mt="sm">
-            <Table.Thead striped highlightOnHover>
-              <Table.Tr>
-                <Table.Th>Item</Table.Th>
-                <Table.Th>Quantity</Table.Th>
-                <Table.Th>Unit Price (Rs.)</Table.Th>
-                <Table.Th>Discount</Table.Th>
-                <Table.Th>Total (Rs.)</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {cart.map((item, index) => (
-                <Table.Tr key={index}>
-                  <Table.Td>{item.productName}</Table.Td>
-                  <Table.Td>{item.quantity}</Table.Td>
-                  <Table.Td>{item.price.toFixed(2)}</Table.Td>
-                  <Table.Td>{item.discount}%</Table.Td>
-                  <Table.Td>{(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 1)).toFixed(2)}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-
-          <Table>
-  <tbody>
-    <tr>
-      <td><strong>Subtotal:</strong></td>
-      <td style={{ textAlign: 'right' }}>Rs. {cartTotal}</td>
-    </tr>
-    <tr>
-      <td><strong>Discount:</strong></td>
-      <td style={{ textAlign: 'right' }}>Rs. {discount}</td>
-    </tr>
-    <tr>
-      <td><strong>Net Total:</strong></td>
-      <td style={{ textAlign: 'right' }}>Rs. {cartTotal}</td>
-    </tr>
-    <tr>
-      <td><strong>Payment Method:</strong></td>
-      <td style={{ textAlign: 'right' }}>{paymentMethod}</td>
-    </tr>
-  </tbody>
-</Table>
-
-          <Text mt="sm"><strong>Payment Instructions:</strong> Please draw the cheque in favor of Anuradha Transport Services.</Text>
-      <br></br>  
-</div>
-          <Button color="green" fullWidth mt="md" onClick={handleConfirmCheckout}>
-            Confirm Checkout
-          </Button>
-          <Button mt="md" fullWidth color="blue" onClick={generatePDF}>Print PDF</Button>
-          <Button mt="md" fullWidth color="teal" onClick={sendEmail}>Send Email</Button>
-     
+            <Grid.Col span={3}>
+              <Text size="lg" weight={500}>SKU:</Text>
+              <Autocomplete
+                data={productAutocompleteList}
+                value={sku}
+                onChange={(val) => {
+                  setSKU(val);
+                  handleProductSelect(val);
+                }}
+                placeholder="Select SKU"
+              />
+            </Grid.Col>
+            <Grid.Col span={4}>
+              <Text size="lg" weight={500}>Product Name:</Text>
+              <TextInput value={productName} readOnly />
+            </Grid.Col>
+            <Grid.Col span={2}>
+              <Text size="lg" weight={500}>Qty:</Text>
+              <NumberInput
+                value={quantity}
+                onChange={(val) => {
+                  handleQtyChange(val);
+                  setQuantity(val);
+                }}
+                min={0}
+                max={maxQty}
+              />
+            </Grid.Col>
+            <Grid.Col span={2}>
+              <Text size="lg" weight={500}>Discount:</Text>
+              <NumberInput
+                value={discount}
+                onChange={handleDiscountChange}
+                min={0}
+                max={maxDiscount}
+              />
+            </Grid.Col>
+          </Grid>
+          <Button color="green" onClick={handleAddToCart}>Add to Cart</Button>
         </Stack>
-      </Modal> */}
 
-<Modal opened={checkoutModalOpen} onClose={() => setCheckoutModalOpen(false)} size="lg" style={customStyles}>
-        <div ref={modalRef} dangerouslySetInnerHTML={{ __html: renderInvoiceTemplate() }} />
-        <br></br>  
-        <Button onClick={generatePDF}>Export as PDF</Button>
-      </Modal>
-    </Container>
+        <Table
+  striped
+  highlightOnHover
+  withBorder
+  style={{
+    tableLayout: "fixed",
+    width: "100%",
+    maxWidth: "auto", // Adjust width as needed
+    height: "400px", // Adjust height as needed
+    overflow: "hidden", // Prevents the table itself from stretching
+  }}
+>
+<div style={{ overflowY: "auto", maxHeight: "400px",maxWidth: "auto" }}>
+<table style={{ width: "100%" }}>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Discount</th>
+              <th>Price</th>
+              <th>Discounted Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cart.map((item, index) => (
+              <tr key={index}>
+                <td>{item.sku}</td>
+                <td>{item.productName}</td>
+                <td>{item.quantity}</td>
+                <td>{item.discount}%</td>
+                <td>LKR {item.price.toFixed(2)}</td>
+                <td>LKR {(calculateDiscountedPrice(item.price, item.discount || 0) * (item.quantity || 0)).toFixed(2)}</td>
+                <td>
+                  <Button
+                    variant="light"
+                    color="red"
+                    onClick={() => handleRemoveFromCart(index)}
+                  >
+                    Remove
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          </table>
+  </div>
+</Table>
+      </Card>
+    </Grid.Col>
+
+    <Grid.Col span={4}>
+      <Card padding="lg" shadow="sm">
+        <Text size="lg" weight={500}>Cart Summary</Text>
+        {cart.length === 0 && <Text>No items in cart</Text>}
+        <Stack spacing="xs">
+          <Group position="apart">
+            <Text weight={500}>Total:</Text>
+            <Text weight={500}>${cartTotal}</Text>
+          </Group>
+        </Stack>
+        <Select
+          label="Payment Method"
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          data={[
+            { value: "cash", label: "Cash" },
+            { value: "card", label: "Card" },
+            { value: "online", label: "Online" },
+          ]}
+          mt="md"
+        />
+        <Button onClick={handleCheckout} fullWidth mt="md">
+          Checkout
+        </Button>
+      </Card>
+    </Grid.Col>
+  </Grid>
+
+  <Modal
+    opened={checkoutModalOpen}
+    onClose={() => setCheckoutModalOpen(false)}
+    size= "xl"
+  >
+    <div ref={modalRef} dangerouslySetInnerHTML={{ __html: renderInvoiceTemplate() }} />
+    <Button onClick={generatePDF} mt="md" fullWidth>
+      Export as PDF
+    </Button>
+  </Modal>
+</Container>
+
   );
 };
 

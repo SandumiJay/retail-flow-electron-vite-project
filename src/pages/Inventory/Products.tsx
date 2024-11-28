@@ -56,7 +56,7 @@ const Products: React.FC = () => {
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const [originalImage, setOriginalImage] = React.useState<string | null>(null);
   const [showMaxDiscount, setShowMaxDiscount] = React.useState(false);
-  const [maxDiscount, setMaxDiscount] = React.useState(); 
+  const [maxDiscount, setMaxDiscount] = React.useState(0); 
 
   const showErrorNotification = (message: string) => {
     showNotification({
@@ -112,7 +112,7 @@ const Products: React.FC = () => {
       quantity: null,
       price: null,
       cost: null,
-      maxDiscount:null,
+      maxDiscount:0,
     },
     validate: {
       proname: (value) => (value ? null : "Product name is required"),
@@ -134,7 +134,7 @@ const Products: React.FC = () => {
   };
 
   const handleUpdateProduct = async (values: typeof form.values) => {
-    const { procode, proname, category, quantity, price, cost,maxDiscount } = values;
+    let { procode, proname, category, quantity, price, cost,maxDiscount } = values;
     let imageUrl = originalImage;
 
     try {
@@ -149,7 +149,9 @@ const Products: React.FC = () => {
         );
         imageUrl = uploadResponse.data.url;
       }
-
+      if(maxDiscount === null){
+        maxDiscount=0;
+      }
       await axios.put(API_ENPOINTS.UPDATE_PRODUCT, {
         sku: procode,
         name: proname,
@@ -239,22 +241,22 @@ const Products: React.FC = () => {
   useEffect(() => {
     console.log("Products state updated:", products); 
     const rows = products.map((product) => (
-      <tr key={product.sku} style={{ border: "1px solid #dee2e6" }}>
-        <td style={{ textAlign: "left", padding: "10px" }}>{product.sku}</td>
-        <td style={{ textAlign: "left", padding: "10px" }}>{product.productName}</td>
-        <td style={{ textAlign: "left", padding: "10px" }}>
+      <Table.Tr key={product.sku}>
+        <Table.Td style={{ textAlign: "left", padding: "10px" }}>{product.sku}</Table.Td>
+        <Table.Td style={{ textAlign: "left", padding: "10px" }}>{product.productName}</Table.Td>
+        <Table.Td style={{ textAlign: "left", padding: "10px" }}>
           {product.image ? (
             <Image radius="md" height={50} fit="contain" src={product.image} style={{ border: "1px solid #dee2e6" }} />
           ) : (
             <Badge color="gray">No Image</Badge>
           )}
-        </td>
-        <td style={{ textAlign: "left", padding: "10px" }}>{product.category}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>{product.intQty}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>LKR {product.cost.toFixed(2)}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>LKR {product.price.toFixed(2)}</td>
-        <td style={{ textAlign: "right", padding: "10px" }}>{product.maxDiscount}%</td>
-        <td
+        </Table.Td>
+        <Table.Td style={{ textAlign: "left", padding: "10px" }}>{product.category}</Table.Td>
+        <Table.Td style={{ textAlign: "right", padding: "10px" }}>{product.intQty}</Table.Td>
+        <Table.Td style={{ textAlign: "right", padding: "10px" }}>LKR {product.cost.toFixed(2)}</Table.Td>
+        <Table.Td style={{ textAlign: "right", padding: "10px" }}>LKR {product.price.toFixed(2)}</Table.Td>
+        <Table.Td style={{ textAlign: "right", padding: "10px" }}>{product.maxDiscount}%</Table.Td>
+        <Table.Td
           style={{
             display: "flex",
             gap: "5px",
@@ -262,25 +264,23 @@ const Products: React.FC = () => {
             padding: "10px",
           }}
         >
-           {product.intQty === config.OUT_OF_STOCK ? (
+          {product.intQty === config.OUT_OF_STOCK ? (
             <Badge color="red">Out of Stock</Badge>
           ) : product.intQty < config.LOW_STOCK ? (
             <Badge color="yellow">Low in Stock</Badge>
           ) : (
             <Badge color="green">In Stock</Badge>
           )}
-          {/* <Button onClick={() => handleEditViewModal(product)}>
+        </Table.Td>
+        <Table.Td style={{ display: "flex", gap: "5px", justifyContent: "end", padding: "10px" }}>
+          <Button onClick={() => handleEditViewModal(product)} title="Edit Product">
             <IconEdit />
           </Button>
-          <Button color="red" onClick={() => hadleDeleteConfirm(product)}>
+          <Button color="red" onClick={() => hadleDeleteConfirm(product)} title="Delete Product">
             <IconTrashX />
-          </Button> */}
-        </td>
-        <td style={{ display: "flex", gap: "5px", justifyContent: "end", padding: "10px" }}>
-          <Button onClick={() => handleEditViewModal(product)} title="Edit Product" ><IconEdit /></Button>
-          <Button color="red" onClick={() => hadleDeleteConfirm(product)} title="Delete Product"><IconTrashX /></Button>
-        </td>
-      </tr>
+          </Button>
+        </Table.Td>
+      </Table.Tr>
     ));
 
     setProductTblRows(rows);
@@ -587,10 +587,12 @@ const Products: React.FC = () => {
           Add New Product 
         </Button>
       </Flex>
+      <div style={{ overflowX: "auto", maxHeight: "700px" }}>
       <Table striped highlightOnHover>
-        <Table.Thead>{headers}</Table.Thead>
+        <Table.Thead style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 1 }}>{headers}</Table.Thead>
         <Table.Tbody>{productTblRows}</Table.Tbody>
       </Table>
+      </div>
     </div>
   );
 };

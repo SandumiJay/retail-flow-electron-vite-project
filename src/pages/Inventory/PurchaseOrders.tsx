@@ -83,6 +83,7 @@ const PurchaseOrders: React.FC = () => {
   const [viewDetailsModal, setViewDetailsModal] = React.useState(false);
   const [productName, setProductName] = React.useState<string>("");
   const [sku, setSKU] = React.useState<string>("");
+  const [selectedProductName, setSelectedProductName] = React.useState<string>("");
 
   const rows = purchaseOrders.map((product) => (
     <Table.Tr key={product.id}>
@@ -197,6 +198,9 @@ const PurchaseOrders: React.FC = () => {
       return element.sku === firstValue;
     });
     
+    console.log(seletedProduct)
+    setSelectedProductName(seletedProduct?.productName)
+    console.log(selectedProductName)
     setSelectedProduct(seletedProduct);
     setSKU(seletedProduct.sku);
     setProductName(seletedProduct.productName);  
@@ -216,7 +220,7 @@ const PurchaseOrders: React.FC = () => {
       setReciptEntries((prevEntries: any) => [...prevEntries, newEntry]);
       setTotalCost((prevTotalCost: any) => Number(prevTotalCost) + Number(productCost) * Number(productQuantity));
       
-      setSelectedProduct(null);
+      setSelectedProductName('');
       setProductCost('');
       setProductQuantity('');
     }
@@ -416,12 +420,12 @@ const PurchaseOrders: React.FC = () => {
   <Grid.Col span={4}>
     <Autocomplete
       label="Select Product"
-      value ={selectedProduct}
+      value ={selectedProductName}
       data={productAutocompleteList}
       onChange={(val)=>{
         setSKU(val.split(' ')[0]);
         setProductName(val.split(' ')[1]);
-        handleProductSelect
+        handleProductSelect(val)
       }}
     />
   </Grid.Col>

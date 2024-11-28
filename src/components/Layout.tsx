@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import React, { Children } from "react";
 import Sidebar from "./sidebar";
-import { useLocation } from "react-router-dom";
+import { useLocation,useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
 import logo2 from "../assets/logo2.jpg";
 import {
@@ -24,10 +24,24 @@ import {
 } from "@tabler/icons-react";
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const showSidebar = location.pathname !== "/"; // Show sidebar only if not on the login page
   const [opened, { toggle }] = useDisclosure();
   const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+
+  const handleSignOut = () => {
+    // Clear authentication tokens or user data
+    localStorage.clear(); // Example: clear tokens or user data stored in localStorage
+    sessionStorage.clear();
+
+    // Optionally, call a logout API endpoint if needed
+    // await api.logout();
+
+    // Redirect to the login page
+    navigate("/");
+  };
+
   return (
     <>
       {showSidebar ? (
@@ -123,6 +137,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     leftSection={
                       <IconTrash style={{ width: rem(14), height: rem(14) }} />
                     }
+                    onClick={handleSignOut} 
                   >
                     Sign Out
                   </Menu.Item>
