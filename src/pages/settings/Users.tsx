@@ -1,205 +1,273 @@
 import {
-    Button,
-    FileInput,
-    Flex,
-    Group,
-    Image,
-    Modal,
-    Table,
-    TextInput,
-  } from "@mantine/core";
-  import React, { useEffect } from "react";
-  import { useForm } from "@mantine/form";
-  import axios from "axios";
-import API_ENPOINTS from "../../API";
-  
-  interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-    status: number; 
-  }
-   
-  
-  const Users: React.FC = () => {
-    const [viewAddItem, setViewAddItem] = React.useState(false);
-    const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-    const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  
-    const [users, setUsers] = React.useState<User[]>([]);
-    const form = useForm({
-      mode: "uncontrolled",
-      initialValues: {
-        procode: "",
-        proname: "",
-        category: "",
-        quantity: 0,
-        price: 0,
-      },
-      validate: {
-        procode: (value) => (value ? null : "Product code is required"),
-        proname: (value) => (value ? null : "Product name is required"),
-      },
-    });
-  
-    const handleFileChange = (file: File | null) => {
-      if (file) {
-        setSelectedFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setImagePreview(null);
-        setSelectedFile(null);
-      }
-    };
-  
-    const handleAddProduct = async (values: typeof form.values) => {
-      const { procode, proname, category, quantity, price } = values;
-  
-      if (selectedFile) {
-        // Create FormData to handle file upload
-        const formData = new FormData();
-        formData.append("image", selectedFile);
-        
-        try {
-          // Upload the image
-          const uploadResponse = await axios.post(API_ENPOINTS.UPLOAD_PRODUCT_IMAGE, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          const imageUrl = uploadResponse.data.url;
-  
-          // Create product with image URL
-          await axios.post( API_ENPOINTS.ADD_PRODUCT, {
-            sku: procode,
-            name: proname,
-            category,
-            quantity,
-            price,
-            image: imageUrl,
-          });
-  
-          // Reset form and close modal
-          form.reset();
-          setViewAddItem(false);
-          setImagePreview(null);
-          setSelectedFile(null);
-          // Optionally, reload Users list
-          // loadUsers();
-        } catch (error) {
-          console.error("Error uploading file or saving product:", error);
-        }
-      }
-    };
-  
-    const rows = users.map((product) => (
-      <tr key={product.id}>
-        <td>{product.id}</td>
-        <td>{product.username}</td> 
-         
-        <td>{product.email}</td>
-        <td>{product.role}</td>
-        
-        <td style={{ display: "flex", gap: "5px" }}>
-          <Button>Edit</Button>
-          <Button color="red">Delete</Button>
-        </td>
-      </tr>
-    ));
-  
-    const headers = (
-      <tr>
-        <th>User Id</th>
-        <th>User Name</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Status</th> 
-        <th></th>
-      </tr>
-    );
+  Button,
+  Flex,
+  Group,
+  Modal,
+  Select,
+  Switch,
+  Table,
+  TextInput,
+} from "@mantine/core";
+import React, { useEffect, useState } from "react";
+import { useForm } from "@mantine/form";
+import axios from "axios";
+import API_ENDPOINTS from "../../API";
+import ROLE_PERMISSIONS from "../../permission";
 
-    const loadUsers = async () => {
-        try {
-          const response = await axios.get(API_ENPOINTS.GET_USERS);
-          setUsers(response.data.users);
-        } catch (error) {
-          console.log(error);
-        }
-      };
-  
-    useEffect(() => {
-        loadUsers();
-    }, []);
-    return (
-      <div>
-        <Modal
-          opened={viewAddItem}
-          onClose={() => setViewAddItem(false)}
-          title="Add new user account"
-          size="auto"
-          radius={0}
-          transitionProps={{ transition: "fade", duration: 200 }}
-        >
-          <form onSubmit={form.onSubmit(handleAddProduct)}>
-            <Group>
-              <TextInput
-                withAsterisk
-                label="User Name"
-                placeholder="SKU00001"
-                {...form.getInputProps("procode")}
-              />
-              <TextInput
-                withAsterisk
-                label="Email"
-                placeholder="Product Name"
-                {...form.getInputProps("proname")}
-              />
-            </Group>
-            <Group>
-              <TextInput
-                withAsterisk
-                label="Password"
-                placeholder="Category"
-                type="password"
-                {...form.getInputProps("category")}
-              />
-              <TextInput
-                withAsterisk
-                label="Confirm Password"
-                placeholder="Quantity"
-                type="password"
-                {...form.getInputProps("quantity")}
-              />
-              
-            </Group>
-             
-           
-            <Group justify="flex-end" mt="md">
-              <Button onClick={() => setViewAddItem(false)}>Close</Button>
-              <Button type="submit">Add</Button>
-            </Group>
-          </form>
-        </Modal>
-        <Flex justify="space-between" align="center">
-          <h4>Users</h4>
-          <Button onClick={() => setViewAddItem(true)}>Add</Button>
-        </Flex>
-        <Table
-          captionSide="top"
-          striped
-          highlightOnHover
-          withTableBorder
-          withColumnBorders
-        >
-          <thead>{headers}</thead>
-          <tbody>{rows}</tbody>
-        </Table>
-      </div>
-    );
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  status: number; // 1 = Active, 0 = Inactive
+}
+
+
+
+const Users: React.FC = () => {
+  const [viewModal, setViewModal] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [userState,setUserState] =useState(false);
+  const [userRole,setUserRole]=useState(); // eslint-disable-line
+
+  const form = useForm({
+    initialValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "user", // default role
+    },
+    validate: {
+      username: (value) => (value ? null : "Username is required"),
+      email: (value) =>
+        /^\S+@\S+$/.test(value) ? null : "Invalid email format",
+      password: (value) =>
+        editUser || value ? null : "Password is required",
+      confirmPassword: (value, values) =>
+        value === values.password ? null : "Passwords do not match",
+    },
+  });
+
+  const getTheUserRole = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.GET_USER_ROLE);
+      setUserRole(response.data.role);
+    } catch (error) {
+      console.error("Failed to load users:", error.response?.data || error.message);
+    }
   };
   
-  export default Users;
-  
+  const hasPermission = ( // eslint-disable-line
+    feature: keyof typeof ROLE_PERMISSIONS['user'],
+    role: keyof typeof ROLE_PERMISSIONS
+  ) => ROLE_PERMISSIONS[role]?.[feature];
+
+const loadUsers = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.GET_USERS);
+      setUsers(response.data.users);
+    } catch (error) {
+      console.error("Failed to load users:", error.response?.data || error.message);
+    }
+  };
+
+  const handleSaveUser = async (values: typeof form.values) => {
+    const { username, email, password, role } = values;
+
+    try {
+      if (editUser) {
+        // Update existing user
+        await axios.put(`${API_ENDPOINTS.UPDATE_USER}/${editUser.id}`, {
+          username,
+          email,
+          password: password || undefined, // Only send password if updated
+          role,
+        });
+      } else {
+        // Create new user
+        await axios.post(API_ENDPOINTS.CREATE_USER, {
+          username,
+          email,
+          password,
+          role,
+        });
+      }
+
+      form.reset();
+      setViewModal(false);
+      setEditUser(null);
+      loadUsers();
+    } catch (error) {
+      console.error("Error saving user:", error.response?.data || error.message);
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditUser(user);
+    form.setValues({
+      username: user.username,
+      email: user.email,
+      password: "",
+      confirmPassword: "",
+      role: user.role,
+    });
+    setViewModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      await axios.delete(`${API_ENDPOINTS.DELETE_USER}/${id}`);
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to delete user:", error.response?.data || error.message);
+    }
+  };
+
+  const handleToggleStatus = async (user: User) => {
+    console.log(user)
+    try {
+      if(userState){
+        setUserState(!userState)
+      }
+      else{
+        setUserState(true)
+      }
+    
+      const res= await axios.put(`${API_ENDPOINTS.UPDATE_USER_STATUS}/${user.id}`, {
+        status: userState ? 0 : 1, // Toggle status
+      });
+      console.log(res.status)
+      loadUsers(); // Refresh users after status update
+      console.log(user)
+    } catch (error) {
+      console.error("Failed to update status:", error.response?.data || error.message);
+    }
+  };
+
+  const rows = users.map((user) => (
+    <tr key={user.id}>
+      <td>{user.id}</td>
+      <td>{user.username}</td>
+      <td>{user.email}</td>
+      <td>{user.role}</td>
+      <td>
+          
+      <Switch 
+      checked={userState} 
+      onChange={() => handleToggleStatus(user)}
+      label={userState === true ? "Active" : "Inactive"}
+      style={{ width: "45%" , marginRight: "5%", marginTop: "4%" }}
+      step="0.01"
+    />
+      </td>
+      <td style={{ display: "flex", gap: "5px" }}>
+        <Button onClick={() => handleEdit(user)}>Edit</Button>
+        <Button color="red" onClick={() => handleDelete(user.id)}>
+          Delete
+        </Button>
+      </td>
+    </tr>
+  ));
+
+  useEffect(() => {
+    loadUsers();
+    getTheUserRole();
+  }, []);
+
+  return (
+    <div>
+      <Modal
+        opened={viewModal}
+        onClose={() => {
+          setViewModal(false);
+          setEditUser(null);
+          form.reset();
+        }}
+        title={editUser ? "Edit User" : "Add User"}
+        size="auto"
+        radius={0}
+        transitionProps={{ transition: "fade", duration: 200 }}
+      >
+        <form onSubmit={form.onSubmit(handleSaveUser)}>
+          <Group>
+            <TextInput
+              withAsterisk
+              label="Username"
+              placeholder="Enter username"
+              {...form.getInputProps("username")}
+            />
+            <TextInput
+              withAsterisk
+              label="Email"
+              placeholder="Enter email"
+              {...form.getInputProps("email")}
+            />
+          </Group>
+          <Group>
+            <TextInput
+              withAsterisk={!editUser}
+              label="Password"
+              placeholder="Enter password"
+              type="password"
+              {...form.getInputProps("password")}
+            />
+            <TextInput
+              withAsterisk={!editUser}
+              label="Confirm Password"
+              placeholder="Confirm password"
+              type="password"
+              {...form.getInputProps("confirmPassword")}
+            />
+          </Group>
+          <Group>
+            <Select
+              withAsterisk
+              label="Role"
+              placeholder="Select role"
+              data={[
+                { value: "admin", label: "Admin" },
+                { value: "super admin", label: "Super Admin" },
+                { value: "user", label: "User" },
+              ]}
+              {...form.getInputProps("role")}
+            />
+          </Group>
+          <Group justify="flex-end" mt="md">
+            <Button onClick={() => setViewModal(false)}>Close</Button>
+            <Button type="submit">{editUser ? "Update" : "Add"}</Button>
+          </Group>
+        </form>
+      </Modal>
+      <Flex justify="space-between" align="center" mb="md">
+        <h4>Users</h4>
+        <Button onClick={() => setViewModal(true)}>Add User</Button>
+      </Flex>
+      <Table
+        captionSide="top"
+        striped
+        highlightOnHover
+        withTableBorder
+        withColumnBorders
+      >
+        <thead>
+          <tr>
+            <th>User Id</th>
+            <th>User Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+      </Table>
+    </div>
+  );
+};
+
+export default Users;

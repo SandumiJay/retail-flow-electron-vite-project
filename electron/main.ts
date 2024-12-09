@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
-const require = createRequire(import.meta.url)
+const require = createRequire(import.meta.url) // eslint-disable-line
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
@@ -49,7 +49,7 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
   win.on('resize', () => {
-    const [width, height] = win.getBounds();
+    const [width, height] = win.getBounds(); 
     // You can use these dimensions to adjust your layout if needed
   });
 

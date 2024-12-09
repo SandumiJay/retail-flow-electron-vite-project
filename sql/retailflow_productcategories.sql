@@ -27,7 +27,7 @@ CREATE TABLE `productcategories` (
   `Category` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `Status` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -36,7 +36,7 @@ CREATE TABLE `productcategories` (
 
 LOCK TABLES `productcategories` WRITE;
 /*!40000 ALTER TABLE `productcategories` DISABLE KEYS */;
-INSERT INTO `productcategories` VALUES (1,'vegies',1),(4,'sssswwww',1),(8,'fruits',1);
+INSERT INTO `productcategories` VALUES (10,'Fruits',1),(11,'Vegitables',1),(12,'Car',1),(14,'Vans',1);
 /*!40000 ALTER TABLE `productcategories` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -49,4 +49,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-21  2:23:29
+-- Dump completed on 2024-11-16 17:24:06

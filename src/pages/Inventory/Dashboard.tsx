@@ -1,6 +1,6 @@
-import { NavLink } from "@mantine/core";
+import { NavLink } from "@mantine/core"; // eslint-disable-line
 import React from "react";
-import { IconChevronRight, IconGauge, IconHome2 } from "@tabler/icons-react";
+import { IconChevronRight, IconGauge, IconHome2 } from "@tabler/icons-react"; // eslint-disable-line
 interface DashboardProps {
   user: {
     name: string;

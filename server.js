@@ -12,22 +12,30 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { console } from "inspector";
 dotenv.config(); // Load environment variables from a .env file
+import SSHDBConnection from './db.js'; 
+import { saveSessionData,getSessionData } from './utils.js';
 
 const app = express();
 const port = 3001;
 
-const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "1QAZ2wsx@", // Ensure you set a strong password for production
-  database: "retailflow",
-  decimalNumbers: true,
-});
+
+
+// const pool = mysql.createPool({
+//   host: "localhost",
+//   user: "root",
+//   password: "1QAZ2wsx@", // Ensure you set a strong password for production
+//   database: "retailflow",
+//   decimalNumbers: true,
+// });
 
 app.use(cors());
 app.use(bodyParser.json());
 
-const db = pool;
+// const db = pool;
+
+
+
+
 // Example route
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from the backend!" });
@@ -36,33 +44,150 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const createNewUser = async (username, password) => {
+// Create new user in the database
+const createNewUser = async (username, password, email, role) => {
   try {
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Establish DB connection
+    const db = await SSHDBConnection;
+
+    // Retrieve role ID
+    const [roleResult] = await db.query("SELECT id FROM userroles WHERE role = ?", [role]);
+    const roleId = roleResult[0]?.id; // Safely access the ID
+
+    if (!roleId) {
+      throw new Error(`Role "${role}" does not exist.`);
+    }
+
+    // Insert user into the database
     const [result] = await db.query(
-      "INSERT INTO users (username, password) VALUES (?, ?)",
-      [username, hashedPassword]
+      "INSERT INTO users (username, password, email, role, roleid) VALUES (?, ?, ?, ?, ?)",
+      [username, hashedPassword, email, role, roleId]
     );
-    return result.insertId;
+
+    return result.insertId; // Return the ID of the newly created user
   } catch (error) {
-    throw new Error(`Failed to create user: ${error.message}`);
+    throw new Error(`Failed to create user: ${error.message +"    " +role}`);
   }
 };
 
-app.get("/api/create-user", async (req, res) => {
-  console.log("req.body:", req.body);
+// API endpoint to create a new user
+app.post("/api/create-user", async (req, res) => {
+  const { username, password, email, role } = req.body;
+
   try {
-    const { username, password } = { username: "admin", password: "admin123" };
-    const userId = await createNewUser(username, password);
-    res.json({ message: "User created successfully", id: userId });
+    // Validate input fields
+    if (!username || !password || !email || !role) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // Create the new user
+    const userId = await createNewUser(username, password, email, role);
+    res.status(201).json({ message: "User created successfully", id: userId });
   } catch (error) {
+    console.error("Error creating user:", error.message);
     res.status(500).json({ message: error.message });
+  }
+});
+app.put("/api/update-user/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // Extract user ID from URL params
+    const { username, email, password, role } = req.body;
+
+    if (!id || !username || !email || !role) {
+      return res.status(400).json({
+        message: "ID, username, email, and role are required to update a user.",
+      });
+    }
+
+    const pool = await SSHDBConnection;
+
+    if (password) {
+      // Hash the password if provided
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updateQuery =
+        "UPDATE users SET username = ?, email = ?, password = ?, role = ? WHERE id = ?";
+      await pool.query(updateQuery, [username, email, hashedPassword, role, id]);
+    } else {
+      // Update without the password
+      const updateQuery =
+        "UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?";
+      await pool.query(updateQuery, [username, email, role, id]);
+    }
+
+    res.status(200).json({ message: "User updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      message: "An error occurred while updating the user.",
+      error: error.message,
+    });
+  }
+});
+
+
+app.delete("/api/delete-user/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // Extract the user ID from the route parameter
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required." });
+    }
+
+    const pool = await SSHDBConnection;
+
+    // Perform the delete operation
+    const result = await pool.query("DELETE FROM users WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      // If no rows were affected, the ID does not exist
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({
+      message: "An error occurred while deleting the user.",
+      error: error.message,
+    });
+  }
+});
+
+app.put("/api/update-user-status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id ) {
+      return res.status(400).json({
+        message: "ID is required to update a user.",
+      });
+    }
+
+    const pool = await SSHDBConnection;
+
+    const updateQuery =
+        "UPDATE users SET status = ? WHERE id = ?";
+      await pool.query(updateQuery, [status, id]);
+   
+
+    res.status(200).json({ message: "User status updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      message: "An error occurred while updating the user.",
+      error: error.message,
+    });
   }
 });
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   try {
+    const db = await SSHDBConnection; 
     const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [
       username,
     ]);
@@ -72,6 +197,7 @@ app.post("/api/login", async (req, res) => {
     }
 
     const user = rows[0];
+    saveSessionData('role',user.role)
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -89,9 +215,20 @@ app.post("/api/login", async (req, res) => {
     );
 
     res.json({ message: "Login successful", token });
+    // updateEnv('logged_user', user.role);
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" + error });
   }
+});
+
+app.get('/get-the-role', (req, res) => {
+  const role = getSessionData('role');
+
+  if (!role) {
+    return res.status(404).json({ message: 'Role not found' });
+  }
+
+  res.status(200).json({ role });
 });
 
 app.post("/api/create-product-category", async (req, res) => {
@@ -102,7 +239,7 @@ app.post("/api/create-product-category", async (req, res) => {
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
     }
-
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO productcategories (Category	, Status) VALUES (?, ?)",
       [category, 1] // Assuming status is 1 (active) by default
@@ -123,6 +260,7 @@ app.post("/api/create-product-category", async (req, res) => {
 app.get("/api/get-product-categories", async (req, res) => {
   try {
     // Query the database for all unique product categories
+    const pool = await SSHDBConnection; 
     const [categories] = await pool.query(
       "SELECT DISTINCT id,Category,Status FROM productcategories group by id,Category,Status"
     );
@@ -157,7 +295,7 @@ app.put("/api/update-product-category", async (req, res) => {
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
     }
-
+    const pool = await SSHDBConnection; 
     await pool.query("UPDATE productcategories SET Category = ? WHERE id = ?", [
       category,
       id,
@@ -217,6 +355,7 @@ app.post(
 app.delete("/api/delete-product-category", async (req, res) => {
   try {
     const { id } = req.query;
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM productcategories WHERE id = ?", [id]);
     res.status(200).json({ message: "Category deleted successfully" });
   } catch (error) {
@@ -227,7 +366,8 @@ app.delete("/api/delete-product-category", async (req, res) => {
 app.post("/api/add-product", async (req, res) => {
   try {
     // Extract product data from req.body
-    const { name, category, quantity, cost, price, image } = req.body;
+    const { name, category, quantity, cost, price, image, maxDiscount } = req.body;
+    let dicountAllowed=0;
 
     // Input validation
     if (!name) {
@@ -251,12 +391,20 @@ app.post("/api/add-product", async (req, res) => {
     if (isNaN(price) || price < 0) {
       return res.status(400).json({ message: "Price must be a non-negative number" });
     }
+    if (isNaN(maxDiscount) || maxDiscount < 0 || maxDiscount > 100) {
+      return res.status(400).json({ message: "maxDiscount must be a non-negative number and in between 0 and 100" });
+    }
+
+    if(0 < maxDiscount &&  maxDiscount < 100){
+      dicountAllowed=1
+    }
 
     // Generate SKU and insert product data into the database
     const sku = await generateEntryCode(1);
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
-      "INSERT INTO products (sku, productName, category, intQty,cost, price, image) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [sku, name, category, quantity,cost, price, image]
+      "INSERT INTO products (sku, productName, category, intQty,cost, price, image,maxDiscount,dicountAllowed) VALUES (?, ?, ?, ?, ?,?, ?, ?,?)",
+      [sku, name, category, quantity,cost, price, image,maxDiscount,dicountAllowed]
     );
 
     // Return success response with inserted product details
@@ -271,6 +419,7 @@ app.post("/api/add-product", async (req, res) => {
         cost,
         price,
         image,
+        maxDiscount,
       },
     });
   } catch (error) {
@@ -284,6 +433,7 @@ app.post("/api/add-product", async (req, res) => {
 
 app.get("/api/get-users", upload.single("image"), async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM users");
 
     // Return the list of users in the response
@@ -296,9 +446,13 @@ app.get("/api/get-users", upload.single("image"), async (req, res) => {
   }
 });
 
+
+
+
 app.get("/api/get-products", async (req, res) => {
   try {
     // Query the database for all product categories
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query(
       `SELECT 
       id,
@@ -309,6 +463,7 @@ app.get("/api/get-products", async (req, res) => {
       CAST(cost AS DOUBLE) AS cost,
       CAST(price AS DOUBLE) AS price,
       image,
+      maxDiscount,
       status
        FROM products  `
     );
@@ -341,6 +496,7 @@ app.delete("/api/delete-product", async (req, res) => {
     console.log("Deleting product with ID:", id);
 
     // Perform the deletion
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM products WHERE id = ?", [id]);
     await pool.query("commit");
 
@@ -351,13 +507,12 @@ app.delete("/api/delete-product", async (req, res) => {
   }
 });
 
-
-
 app.put("/api/update-product", async (req, res) => {
-  const { sku, name, category, quantity, price, cost, image } = req.body;
+  const { sku, name, category, quantity, price, cost, image, maxDiscount } = req.body;
 
   // Validate that required fields are present
   const missingFields = [];
+  let dicountAllowed=0;
 
   // Check for missing required fields
   if (!sku) missingFields.push("sku");
@@ -366,6 +521,7 @@ app.put("/api/update-product", async (req, res) => {
   if (!quantity) missingFields.push("quantity");
   if (!price) missingFields.push("price");
   if (!cost) missingFields.push("cost");
+  if (!maxDiscount) missingFields.push("maxDiscount");
 
   // If there are missing fields, return a detailed error message
   if (missingFields.length > 0) {
@@ -373,16 +529,20 @@ app.put("/api/update-product", async (req, res) => {
       message: `Missing required fields: ${missingFields.join(", ")}`,
     });
   }
+ if (0<maxDiscount && maxDiscount<100){
+  dicountAllowed =1
+ }
 
   try {
     // Update the product in the database
     const updateQuery = `
       UPDATE products
-      SET productName = ?, category = ?, intQty = ?, price = ?, cost = ?, image = ?
+      SET productName = ?, category = ?, intQty = ?, price = ?, cost = ?, image = ?, maxDiscount=?, dicountAllowed=?
       WHERE sku = ?
     `;
 
     // Assuming you're using MySQL or a similar relational database
+    const db = await SSHDBConnection; 
     const result = await db.query(updateQuery, [
       name,
       category,
@@ -390,6 +550,8 @@ app.put("/api/update-product", async (req, res) => {
       price,
       cost,
       image || null, // Use the new image or keep the old one
+      maxDiscount,
+      dicountAllowed,
       sku,
     ]);
 
@@ -403,7 +565,65 @@ app.put("/api/update-product", async (req, res) => {
     console.error("Error updating product:", error);
     return res
       .status(500)
-      .json({ message: "An error occurred while updating the product." });
+      .json({ message: error });
+  }
+});
+
+
+app.put("/api/auto-update-inventory", async (req, res) => {
+  const { products } = req.body;
+  console.log(products);
+
+  // Validate that the products array is provided and is an array
+  if (!Array.isArray(products) || products.length === 0) {
+    return res.status(400).json({
+      message: "Request must include an array of products with SKU and quantity." + Array.isArray(products),
+    });
+  }
+
+  // Validate each product in the array for missing fields (SKU and quantity)
+  const missingProducts = products
+    .filter((product, index) => !product.sku || product.quantity == null)
+    .map((product, index) => `Product at index ${index}`);
+
+  if (missingProducts.length > 0) {
+    return res.status(400).json({
+      message: `Missing required fields in products: ${missingProducts.join(", ")}`,
+    });
+  }
+
+  try {
+    // Process each product in the array and update the database
+    for (const { sku, quantity } of products) {
+      if (quantity <= 0) {
+        // Optionally check if the quantity is valid (greater than zero)
+        return res.status(400).json({
+          message: "Quantity must be greater than zero for SKU: " + sku,
+        });
+      }
+
+      // SQL query to update the inventory based on SKU and quantity
+      const updateQuery = `
+        UPDATE products
+        SET intQty = intQty - ?
+        WHERE sku = ? AND intQty >= ?
+      `;
+
+      // Update the quantity in the database for each product
+      const db = await SSHDBConnection; 
+      const [result] = await db.query(updateQuery, [quantity, sku, quantity]);
+
+      // Check if the SKU was found and the quantity was updated
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: `Product with SKU ${sku} not found or insufficient stock.` });
+      }
+    }
+
+    // If all products were successfully updated
+    return res.status(200).json({ message: "Products updated successfully." });
+  } catch (error) {
+    console.error("Error updating products:", error);
+    return res.status(500).json({ message: "An error occurred while updating products." });
   }
 });
 
@@ -411,6 +631,7 @@ app.put("/api/update-supplier", async (req, res) => {
   try {
     const { code, name, email, phone, address, city, country } = req.body;
     const updateQuery = `update suppliers set name = ?, email = ?, phone = ?, address = ?, city = ?, country = ? where code = ?`;
+    const pool = await SSHDBConnection; 
     const result = await pool.query(updateQuery, [
       name,
       email,
@@ -429,19 +650,21 @@ app.put("/api/update-supplier", async (req, res) => {
 app.put("/api/update-customer", async (req, res) => {
   try {
     const { code, name, email, contact, address, city, country, status } = req.body;
-    const updateQuery = `update customers set name = ?, email = ?, contact = ?, address = ?, city = ?, country = ? where code = ?`;
-    const result = await pool.query(updateQuery, [
+    const updateQuery = `UPDATE customers SET name = ?, email = ?, contact = ?, address = ?, city = ?, country = ? WHERE code = ?`;
+    const pool = await SSHDBConnection; 
+    await pool.query(updateQuery, [
       name,
       email,
-      phone,
+      contact,  // corrected from 'phone' to 'contact'
       address,
       city,
       country,
       code,
     ]);
-    res.status(200).json({ message: "Supplier updated successfully." });
+    res.status(200).json({ message: "Customer updated successfully." });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "An error occurred while updating the customer." });
   }
 });
 app.post("/api/delete-supplier", async (req, res) => {
@@ -450,7 +673,7 @@ app.post("/api/delete-supplier", async (req, res) => {
     console.log("cd");
     console.log(supplier);
     console.log(req.body);
-
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM suppliers WHERE code = ?", [supplier.code]);
     res.status(200).json({ message: "Supplier deleted successfully." });
   } catch (error) {
@@ -463,6 +686,7 @@ app.post("/api/delete-customer", async (req, res) => {
       console.log("Deleting Customer with ID:", customers.id);
   
       // Perform the deletion
+      const pool = await SSHDBConnection; 
       await pool.query("Delete FROM customers where id  = ?", [customers.id]);
       await pool.query("commit");
   
@@ -487,6 +711,7 @@ app.post("/api/delete-purchase-order", async (req, res) => {
 
     // Delete from related tables
     console.log("DELETE FROM purchaseorderdetails WHERE poCode = ", poCode);
+    const pool = await SSHDBConnection; 
     await pool.query("DELETE FROM purchaseorderdetails WHERE poCode = ?", [poCode]);
     await pool.query("DELETE FROM purchaseorder WHERE purchaseOrderCode = ?", [poCode]);
 
@@ -527,6 +752,7 @@ app.post("/api/add-supplier", async (req, res) => {
   }
 
   try {
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO suppliers (code, name, email, phone, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [EntryCode, name, email, phone, address, city, country]
@@ -548,6 +774,7 @@ app.post("/api/add-supplier", async (req, res) => {
 
 app.get("/api/get-suppliers", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM suppliers");
     res.status(200).json(rows);
   } catch (error) {
@@ -576,6 +803,7 @@ app.post("/api/add-customer", async (req, res) => {
     });
   }
   try {
+    const pool = await SSHDBConnection; 
     const [result] = await pool.query(
       "INSERT INTO customers (code, name, email, contact, address, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [EntryCode, name, email, contact, address, city, country]
@@ -592,6 +820,7 @@ app.post("/api/add-customer", async (req, res) => {
 
 app.get("/api/get-customers", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM customers");
     res.status(200).json(rows);
   } catch (error) {
@@ -603,6 +832,7 @@ app.post("/api/update-code-format", async (req, res) => {
   const { type, prefix, sample, length } = req.body;
   try {
     // await pool.query("UPDATE codeformats SET PreFix = ?,length=? WHERE Code = ?", [prefix, type]);
+    const pool = await SSHDBConnection; 
     await pool.query(
       "UPDATE codeformats SET PreFix = ?, length = ?, Sample = ? WHERE Code = ?",
       [prefix, length, sample, type]
@@ -618,6 +848,7 @@ app.post("/api/update-code-format", async (req, res) => {
 
 app.get("/api/get-code-formats", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM codeformats");
     res.status(200).json(rows);
   } catch (error) {
@@ -626,6 +857,7 @@ app.get("/api/get-code-formats", async (req, res) => {
 });
 
 const generateEntryCode = async (codeType) => {
+  const pool = await SSHDBConnection; 
   const [rows] = await pool.query("SELECT * FROM codeformats WHERE Code = ?", [
     codeType,
   ]);
@@ -650,6 +882,13 @@ app.post("/api/create-purchase-order", async (req, res) => {
   try {
     // Generate a unique code for the purchase order
     const EntryCode = await generateEntryCode(2);
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const qdate = `${year}-${month}-${day}`;
+    const pool = await SSHDBConnection; 
 
     // Insert the purchase order details into the 'purchaseorder' table
     const [result] = await pool.query(
@@ -659,8 +898,8 @@ app.post("/api/create-purchase-order", async (req, res) => {
         supplier.code,
         supplier.name,
         totalCost,
-        new Date(),
-        new Date(),
+        qdate,
+        qdate,
       ]
     );
     console.log("orderDetails:", orderDetails)
@@ -675,7 +914,7 @@ app.post("/api/create-purchase-order", async (req, res) => {
         item.quantity,
         item.cost,
       ]);
-
+      const pool = await SSHDBConnection; 
       // Insert the order details into the 'purchaseorderdetails' table
       await pool.query(
         "INSERT INTO purchaseorderdetails (poCode, ProductCode, productName, qty, cost) VALUES ?",
@@ -691,12 +930,13 @@ app.post("/api/create-purchase-order", async (req, res) => {
     console.error("Error creating purchase order:", error);
     res
       .status(500)
-      .json({ error: "An error occurred while creating the purchase order" });
+      .json({ error: "An error occurred while creating the purchase order " + error });
   }
 });
 
 app.get("/api/get-purchase-orders", async (req, res) => {
   try {
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query("SELECT * FROM purchaseorder  ");
     res.status(200).json(rows);
   } catch (error) {
@@ -712,9 +952,10 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
       return res.status(400).json({ error: "poCode is required" });
     }
 
-    console.log("Executing query:", "SELECT * FROM retailflow.purchaseorderdetails where poCode= ?", [poCode]);
+    console.log("Executing query:", "SELECT * FROM purchaseorderdetails where poCode= ?", [poCode]);
+    const pool = await SSHDBConnection; 
 
-    const [rows] = await pool.query("SELECT * FROM retailflow.purchaseorderdetails WHERE poCode = ?", [poCode]);
+    const [rows] = await pool.query("SELECT * FROM purchaseorderdetails WHERE poCode = ?", [poCode]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "No purchase order found for the given poCode" });
@@ -723,13 +964,14 @@ app.get("/api/get-purchase-orders-details", async (req, res) => {
     res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error " + error });
   }
 });
 
 app.post("/api/get-reciept-entry-code", async (req, res) => {
   try {
     const { codeType } = req.body;
+    const pool = await SSHDBConnection; 
     const [rows] = await pool.query(
       "SELECT * FROM codeformats WHERE Code = ?",
       [codeType.codeType]

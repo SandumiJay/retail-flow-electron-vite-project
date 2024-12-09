@@ -85,7 +85,7 @@ const Customers: React.FC = () => {
     }
   };
 
-  const withTimeout = (promise, timeout) => {
+  const withTimeout = (promise, timeout) => { // eslint-disable-line
     return Promise.race([
       promise,
       new Promise((_, reject) =>
@@ -142,7 +142,7 @@ const handleDeleteConfirm = (customer: Customer) => () => {
       </Table.Tr>
     ));
     setSupTblRows(rows);
-  }, [customers]);
+  }, [customers]); // eslint-disable-line
   useEffect(() => {
     loadCustomers();
   }, []);
@@ -153,7 +153,7 @@ const handleDeleteConfirm = (customer: Customer) => () => {
   };
   const handleCustomerAdd = async (values: typeof form.values) => {
     console.log(values);
-    const { code,name, email, contact, address, city, country } = values;
+    const { code,name, email, contact, address, city, country } = values; // eslint-disable-line
     try {
       await axios.post(API_ENPOINTS.ADD_CUSTOMER, {
         code: EntryCode,
@@ -190,19 +190,22 @@ const handleDeleteConfirm = (customer: Customer) => () => {
     </Table.Tr>
   );
 
-  const handleUpdateCustomer=  async() => {
+  const handleUpdateCustomer = async () => {
     try {
-        await axios.put(`${API_ENPOINTS.UPDATE_CUSTOMER}`, form.values);
-        setViewEditItem(false);
-        loadCustomers();
+      console.log(form.values)
+      await axios.put(API_ENPOINTS.UPDATE_CUSTOMER, form.values);
+      console.log(form.values)
+      setViewEditItem(false);
+      loadCustomers();
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
   };
+  
 
   const handleCustomerDeleteProceed = async() => {
       try {
-        const response = await axios.post(API_ENPOINTS.DELETE_CUSTOMER ,{
+        const response = await axios.post(API_ENPOINTS.DELETE_CUSTOMER ,{ // eslint-disable-line
             customers: editingCustomer
         });
 
@@ -329,75 +332,72 @@ const handleDeleteConfirm = (customer: Customer) => () => {
         radius={0}
         transitionProps={{ transition: "fade", duration: 200 }}
       >
-        <form onSubmit={form.onSubmit(handleUpdateCustomer)}>
-          <Group>
-            <TextInput
-              
-              label="Customer Code"
-              placeholder="SP00001"
-              {...form.getInputProps("code")}
-              readOnly
-            />
-            <TextInput
-              style={{ width: "100%" }}
-              withAsterisk
-              label="Customer Name"
-              placeholder="Customer Name"
-              {...form.getInputProps("name")}
-            />
-          </Group>
-          <Group>
-            <TextInput
-              withAsterisk
-              label="Email"
-              placeholder="Email"
-              type="email"
-              style={{ width: "100%" }}
-              {...form.getInputProps("email")}
-            />
-            <TextInput
-              withAsterisk
-              label="Phone"
-              placeholder="+74 XXXXXXXX"
-              style={{ width: "100%" }}
-              {...form.getInputProps("phone")}
-            />
-          </Group>
-          <Group>
-            <TextInput
-              withAsterisk
-              label="Address"
-              placeholder="Address"
-              style={{ width: "100%" }}
-              {...form.getInputProps("address")}
-            />
-          </Group>
-          <Group>
-            <TextInput
-              withAsterisk
-              label="City"
-              placeholder="City"
-              {...form.getInputProps("city")}
-            />
-            <Select
-              label="Country"
-              placeholder="select country"
-              data={countries}
-              defaultValue={"Sri Lanka"}
-              {...form.getInputProps("country")}
-            />
-          </Group>
-         
-         
-          <Group justify="flex-start" mt="md">
-            <Button type="submit" color="green">
-              Update
-            </Button>
-            <Button onClick={() => setViewAddItem(false)} color="red">
-              Close
-            </Button>
-          </Group>
-        </form>
+<form onSubmit={form.onSubmit(handleUpdateCustomer)}>
+  <Group>
+    <TextInput
+      label="Customer Code"
+      placeholder="SP00001"
+      {...form.getInputProps("code")}
+      readOnly
+    />
+    <TextInput
+      style={{ width: "100%" }}
+      withAsterisk
+      label="Customer Name"
+      placeholder="Customer Name"
+      {...form.getInputProps("name")}
+    />
+  </Group>
+  <Group>
+    <TextInput
+      withAsterisk
+      label="Email"
+      placeholder="Email"
+      type="email"
+      style={{ width: "100%" }}
+      {...form.getInputProps("email")}
+    />
+    <TextInput
+      withAsterisk
+      label="Phone"
+      placeholder="+74 XXXXXXXX"
+      style={{ width: "100%" }}
+      {...form.getInputProps("contact")} // Use contact here
+    />
+  </Group>
+  <Group>
+    <TextInput
+      withAsterisk
+      label="Address"
+      placeholder="Address"
+      style={{ width: "100%" }}
+      {...form.getInputProps("address")}
+    />
+  </Group>
+  <Group>
+    <TextInput
+      withAsterisk
+      label="City"
+      placeholder="City"
+      {...form.getInputProps("city")}
+    />
+    <Select
+      label="Country"
+      placeholder="select country"
+      data={countries}
+      defaultValue={"Sri Lanka"}
+      {...form.getInputProps("country")}
+    />
+  </Group>
+  <Group justify="flex-start" mt="md">
+    <Button type="submit" color="green" style={{ marginRight: "1rem" }}>
+      Update
+    </Button>
+    <Button onClick={() => setViewEditItem(false)} color="red">
+      Close
+    </Button>
+  </Group>
+</form>
       </Modal>
       <Flex justify="space-between" align="center">
         <h4>Customers</h4>

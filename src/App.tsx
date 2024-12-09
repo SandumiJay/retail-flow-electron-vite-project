@@ -14,7 +14,7 @@ import Suppliers from "./pages/Inventory/Suppliers";
 import PurchaseOrders from "./pages/Inventory/PurchaseOrders";
 import POS1 from "./pages/pos/pos1";
 import CodeFormatss from "./pages/settings/CodeFormats";
-import { Notifications } from "@mantine/notifications";
+import { Notifications } from "@mantine/notifications"; // eslint-disable-line
 import Company from "./pages/settings/Company";
 import Sales from "./pages/sales/Sales";
 

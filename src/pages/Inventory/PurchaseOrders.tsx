@@ -3,15 +3,17 @@ import {
   Button,
   Flex,
   Group,
-  Input,
+  Input, // eslint-disable-line
   Modal,
   Select,
   Table,
   Text,
   TextInput,
+  Divider, // eslint-disable-line
+  Grid,
 } from "@mantine/core";
 import {
-  IconEdit,
+  IconEdit, // eslint-disable-line
   IconEye,
   IconSquareRoundedPlus,
   IconTrashX,
@@ -29,66 +31,39 @@ interface Product {
   cost: number;
 }
 
-const sampleProducts: Product[] = [
-  {
-    sku: "P001",
-    name: "Product 1",
-    category: "Electronics",
-    quantity: 100,
-    cost: 299.99,
-  },
-  {
-    sku: "P002",
-    name: "Product 2",
-    category: "Apparel",
-    quantity: 250,
-    cost: 49.99,
-  },
-  {
-    sku: "P003",
-    name: "Product 3",
-    category: "Books",
-    quantity: 150,
-    cost: 19.99,
-  },
-  {
-    sku: "P004",
-    name: "Product 4",
-    category: "Furniture",
-    quantity: 50,
-    cost: 499.99,
-  },
-];
+
 
 const PurchaseOrders: React.FC = () => {
-  const [purchaseOrders, setPurchaseOrders] = React.useState<any>([]);
+  const [purchaseOrders, setPurchaseOrders] = React.useState<any>([]); // eslint-disable-line
   const [supplierList, setSupplierList] = React.useState<string[]>([]);
-  const [suppliersDataSet, setSuppliersDataSet] = React.useState<any>([]);
-  const [selectedSupplier, setSelectedSupplier] = React.useState<any>({});
-  const [productsDataSet, setProductsDataSet] = React.useState<any>([]);
-  const [productAutocompleteList, setProductAutocompleteList] = React.useState<any>([]);
-  const [selectedProduct, setSelectedProduct] = React.useState<any>({});
-  const [productCost, setProductCost] = React.useState<any>(0);
-  const [productQuantity, setProductQuantity] = React.useState<any>(0);
-  const [receiptRows, setReceiptRows] = React.useState<any>([]);
-  const [reciptEntries, setReciptEntries] = React.useState<any>([]);
-  const [viewAddItem, setViewAddItem] = React.useState<any>([]);
-  const [totalCost, setTotalCost] = React.useState<Number>(0);
-  const [isPosted, setIsPosted] = React.useState(false);
-  const [selectedProducts, setSelectedProducts] = React.useState<any[]>([]);
+  const [suppliersDataSet, setSuppliersDataSet] = React.useState<any>([]); // eslint-disable-line
+  const [selectedSupplier, setSelectedSupplier] = React.useState<any>({});// eslint-disable-line
+  const [productsDataSet, setProductsDataSet] = React.useState<any>([]);// eslint-disable-line
+  const [productAutocompleteList, setProductAutocompleteList] = React.useState<any>([]);// eslint-disable-line
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [productCost, setProductCost] = React.useState<any>(undefined);// eslint-disable-line
+  const [productQuantity, setProductQuantity] = React.useState<any>(undefined); // eslint-disable-line
+  const [receiptRows, setReceiptRows] = React.useState<any>([]); // eslint-disable-line
+  const [reciptEntries, setReciptEntries] = React.useState<any>([]);// eslint-disable-line
+  const [viewAddItem, setViewAddItem] = React.useState<any>([]);// eslint-disable-line
+  const [totalCost, setTotalCost] = React.useState<Number>(0);// eslint-disable-line
+  const [isPosted, setIsPosted] = React.useState(false); // eslint-disable-line
   const [productCounter, setProductCounter] = React.useState<number>(1);
-  const [purchaseOrdersDetails, setPurchaseOrdersDeatils] = React.useState<any[]>([]);
-  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<any>(null);
+  const [purchaseOrdersDetails, setPurchaseOrdersDeatils] = React.useState<any[]>([]);// eslint-disable-line
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<any>(null); // eslint-disable-line
   const [viewDetailsModal, setViewDetailsModal] = React.useState(false);
+  const [productName, setProductName] = React.useState<string>(""); // eslint-disable-line
+  const [sku, setSKU] = React.useState<string>(""); // eslint-disable-line
+  const [selectedProductName, setSelectedProductName] = React.useState<string>("");
 
   const rows = purchaseOrders.map((product) => (
-    <tr key={product.id}>
-      <td>{product.purchaseOrderCode}</td>
-      <td>{product.SupplierCode}</td>
-      <td>{product.SupplierName}</td>
-      <td>{product.docDate}</td>
-      <td>${product.TotalCost.toFixed(2)}</td>
-      <td style={{ display: "flex", justifyContent: "end", gap: "5px" }}>
+    <Table.Tr key={product.id}>
+      <Table.Td style={{ textAlign: "left" }}>{product.purchaseOrderCode}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.SupplierCode}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.SupplierName}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>{product.docDate ? product.docDate.split("T")[0] : ""}</Table.Td>
+      <Table.Td style={{ textAlign: "left" }}>LKR {product.TotalCost}</Table.Td>
+      <Table.Td style={{ display: "flex", justifyContent: "end", gap: "5px" }}> 
         <Button 
           color="teal" 
           onClick={() => {
@@ -103,19 +78,19 @@ const PurchaseOrders: React.FC = () => {
           
           <IconTrashX />
         </Button>
-      </td>
-    </tr>
+      </Table.Td>
+    </Table.Tr>
   ));
 
   const headers = (
-    <tr>
-      <th>PURCHASE ORDER</th>
-      <th>SUPPLIER CODE</th>
-      <th>SUPPLIER NAME</th>
-      <th>DATE</th>
-      <th>TOTAL COST</th>
-      <th></th>
-    </tr>
+    <Table.Tr>
+      <Table.Th style={{ textAlign: "left" }}>PURCHASE ORDER</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>SUPPLIER CODE</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>SUPPLIER NAME</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>DATE</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}>TOTAL COST</Table.Th>
+      <Table.Th style={{ textAlign: "left" }}></Table.Th>
+    </Table.Tr>
   );
 
   // const handleRemovePurchaseOrder = async (poCode: string) => {
@@ -135,7 +110,7 @@ const PurchaseOrders: React.FC = () => {
   
   const handleRemovePurchaseOrder = async(poCode: string) => {
     try {
-      const response = await axios.post(API_ENPOINTS.DELETE_PURCHASE_ORDER ,{
+      const response = await axios.post(API_ENPOINTS.DELETE_PURCHASE_ORDER ,{ // eslint-disable-line
         poCode: poCode
       });
 
@@ -149,11 +124,12 @@ const PurchaseOrders: React.FC = () => {
     try {
       const response = await axios.get(API_ENPOINTS.GET_SUPPLIERS);
       setSuppliersDataSet(response.data);
-      const spl = response.data.map((element: any) => ({
+      const spl = response.data.map((element: any) => ({ // eslint-disable-line
         value: element.id + "",
         label: element.name,
       }));
       setSupplierList(spl);
+     
     } catch (error) {
       console.log(error);
     }
@@ -164,27 +140,43 @@ const PurchaseOrders: React.FC = () => {
       const response = await axios.get(API_ENPOINTS.GET_PRODUCTS);
       const products = response.data;
       setProductsDataSet(products);
-      const spl = products.map((element: any) => element.productName);
-      setProductAutocompleteList(spl);
+      console.log(products)
+  
+      const autocompleteList = products.map((element: any) => `${element.sku} ${element.productName}`); // eslint-disable-line
+      setProductAutocompleteList(autocompleteList);
     } catch (error) {
       console.log(error);
     }
   };
+ 
 
   const handleSupplierSelect = (value: string) => {
     const suppId = value;
-    const selectedSupplier = suppliersDataSet.find((element: any) => {
-      return element.id === parseInt(suppId);
-    });
-    setSelectedSupplier(selectedSupplier);
+    const newSupplier = suppliersDataSet.find((element: any) => element.id === parseInt(suppId)); // eslint-disable-line
+  
+    if (newSupplier && newSupplier.id !== selectedSupplier?.id) {
+      setSelectedSupplier(newSupplier);
+    }
+  
+    
   };
 
   const handleProductSelect = (value: string) => {
-    const seletedProduct = productsDataSet.find((element: any) => {
-      return element.productName === value;
+    
+  const selectedValue = value;
+  const firstValue = selectedValue.split(' ')[0];
+    const seletedProduct = productsDataSet.find((element: any) => { // eslint-disable-line
+      return element.sku === firstValue;
     });
+    
+    console.log(seletedProduct)
+    setSelectedProductName(seletedProduct?.productName)
+    console.log(selectedProductName)
     setSelectedProduct(seletedProduct);
+    setSKU(seletedProduct.sku);
+    setProductName(seletedProduct.productName);  
     setProductCost(seletedProduct.cost);
+    
   };
 
   const handleAddProductToReciept = () => {
@@ -196,20 +188,24 @@ const PurchaseOrders: React.FC = () => {
         cost: productCost,
       };
       setProductCounter((prevCounter) => prevCounter + 1);
-      setReciptEntries((prevEntries: any) => [...prevEntries, newEntry]);
-      setTotalCost((prevTotalCost: any) => Number(prevTotalCost) + Number(productCost) * Number(productQuantity));
-      setSelectedProduct({});
-      setProductCost(0);
-      setProductQuantity(0);
+      setReciptEntries((prevEntries: any) => [...prevEntries, newEntry]); // eslint-disable-line
+      setTotalCost((prevTotalCost: any) => Number(prevTotalCost) + Number(productCost) * Number(productQuantity)); // eslint-disable-line
+      
+      setSelectedProductName('');
+      setProductCost('');
+      setProductQuantity('');
+    }
+    else{
+      alert(`Product or Product Quantitiy Empty`);
     }
   };
 
-  const handleRemoveProductfromReciept = (productsToRemove: any[]) => {
+  const handleRemoveProductfromReciept = (productsToRemove: any[]) => { // eslint-disable-line
     const updatedEntries = reciptEntries.filter(
-      (entry: any) => !productsToRemove.some((product) => product.sku === entry.sku)
+      (entry: any) => !productsToRemove.some((product) => product.sku === entry.sku) // eslint-disable-line
     );
     const newTotalCost = updatedEntries.reduce(
-      (total: number, item: any) => total + item.quantity * item.cost,
+      (total: number, item: any) => total + item.quantity * item.cost, // eslint-disable-line
       0
     );
   
@@ -244,7 +240,7 @@ const PurchaseOrders: React.FC = () => {
       doc.text('Cost', 120, 70);
       doc.line(20, 72, 180, 72); 
 
-      let startY = 80;
+      let startY = 80; // eslint-disable-line
       receiptItems.forEach((item, index) => {
         doc.text(item.productName || 'Unknown', 20, startY + (index * 10));
         doc.text(String(item.quantity), 90, startY + (index * 10));
@@ -263,7 +259,9 @@ const PurchaseOrders: React.FC = () => {
 
   const handleSavePurchaseOrder = async () => {
     try {
-      const response = await axios.post(API_ENPOINTS.CREATE_PURCHASE_ORDER, {
+      console.log("reciptEntries");
+      console.log(reciptEntries);
+      const response = await axios.post(API_ENPOINTS.CREATE_PURCHASE_ORDER, { // eslint-disable-line
         supplier: selectedSupplier,
         orderDetails: reciptEntries,
         totalCost: totalCost,
@@ -279,6 +277,7 @@ const PurchaseOrders: React.FC = () => {
   const loadPurchaseOrders = async () => {
     try {
       const response = await axios.get(API_ENPOINTS.GET_PURCHASE_ORDERS);
+      console.log(response.data)
       setPurchaseOrders(response.data);
     } catch (error) {
       console.log(error);
@@ -294,7 +293,7 @@ const PurchaseOrders: React.FC = () => {
     }
   };
 
-  const handlePurchesOrderDetailsView = (order: any) => {
+  const handlePurchesOrderDetailsView = (order: any) => { // eslint-disable-line
     loadPurchaseOrderDetails(order.purchaseOrderCode);
     setViewDetailsModal(true);
   };
@@ -309,7 +308,7 @@ const PurchaseOrders: React.FC = () => {
   return (
     <div>
       <Flex justify="space-between">
-        <Text>Purchase Orders</Text>
+        <h4>Purchase Orders</h4>
         <Button onClick={() => setViewAddItem('add')} color="teal">
           <IconSquareRoundedPlus />
         </Button>
@@ -318,7 +317,7 @@ const PurchaseOrders: React.FC = () => {
       <Modal
         opened={viewAddItem === 'add'}
         title={viewAddItem === 'add' ? "New Purchase Order" : "Add New Purchase Order "}
-        size="100%"
+        size="60%"
         radius={0}
         onClose={() => {
           setViewAddItem(false);  
@@ -336,45 +335,102 @@ const PurchaseOrders: React.FC = () => {
             onChange={handleSupplierSelect}
           />
          
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-  <tbody>
-    <tr>
-      <td><Text>Supplier Code:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.code}</Text></td>
-      <td><Text>Supplier Name:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.name}</Text></td>
-      <td><Text>Email:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.email}</Text></td>
-      <td><Text>Phone:</Text></td>
-      <td><Text style={{ fontWeight: "bold" }}>{selectedSupplier.phone}</Text></td>
-      <td><Text>Address:</Text></td>
-      <td>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.address},</Text>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.city},</Text>
-        <Text style={{ fontWeight: "bold" }}>{selectedSupplier.country}.</Text>
-      </td>
-    </tr>
-  </tbody>
-</table>
+         <Table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 10px" }}>
+  <Table.Tbody>
+    <Table.Tr>
+      <Flex justify="space-between" style={{ width: "100%" }}>
+        
+        {/* Left Column: Supplier Code and Name */}
+        <Flex direction="column" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Supplier Code:</Text>
+            <Text size="sm">{selectedSupplier.code}</Text>
+          </Group>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Supplier Name:</Text>
+            <Text size="sm">{selectedSupplier.name}</Text>
+          </Group>
+        </Flex>
+
+        {/* Middle Column: Email and Phone */}
+        <Flex direction="column" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Email:</Text>
+            <Text size="sm">{selectedSupplier.email}</Text>
+          </Group>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Phone:</Text>
+            <Text size="sm">{selectedSupplier.phone}</Text>
+          </Group>
+        </Flex>
+
+        {/* Right Column: Address */}
+        <Flex direction="column" align="flex-start" style={{ width: "30%", gap: "10px" }}>
+          <Group justify="flex-start">
+            <Text color="dimmed" size="sm">Address:</Text>
+            <Text size="sm">{selectedSupplier.address}</Text>
+          </Group>
+          <Group justify="flex-start">
+          <Text color="dimmed" size="sm">City:</Text>
+            <Text size="sm">{selectedSupplier.city}</Text>
+          </Group>
+          <Group justify="flex-start">
+          <Text color="dimmed" size="sm">Country:</Text>
+            <Text size="sm">{selectedSupplier.country}</Text>
+          </Group>
+        </Flex>
+
+      </Flex>
+    </Table.Tr>
+  </Table.Tbody>
+</Table>
         
 
-          <Autocomplete
-            label="Select Product"
-            data={productAutocompleteList}
-            onChange={handleProductSelect}
-          />
-          <TextInput
-            label="Quantity"
-            type="number"
-            value={productQuantity}
-            onChange={(event) => setProductQuantity(Number(event.currentTarget.value))}
-          />
-           <TextInput
-            label="Cost"
-            type="number"
-            value={productCost}
-            onChange={(event) => setProductCost(Number(event.currentTarget.value))}
-          />
+<Grid gutter="md">
+  {/* Row 1, Column 1: Autocomplete for Product Selection */}
+  <Grid.Col span={4}>
+    <Autocomplete
+      label="Select Product"
+      value ={selectedProductName}
+      data={productAutocompleteList}
+      onChange={(val)=>{
+        setSKU(val.split(' ')[0]);
+        setProductName(val.split(' ')[1]);
+        handleProductSelect(val)
+      }}
+    />
+  </Grid.Col>
+
+  {/* Row 1, Column 2: Product Name (Read-only) */}
+  {/* <Grid.Col span={6}>
+    <TextInput
+      label="Product"
+      type="text"
+      value={productName}
+      readOnly
+    />
+  </Grid.Col> */}
+
+  {/* Row 2, Column 1: Quantity */}
+  <Grid.Col span={4}>
+    <TextInput
+      label="Quantity"
+      type="number"
+      value={productQuantity}
+      onChange={(event) => setProductQuantity(Number(event.currentTarget.value))}
+    />
+  </Grid.Col>
+
+  {/* Row 2, Column 2: Cost */}
+  <Grid.Col span={4}>
+    <TextInput
+      label="Cost"
+      type="number"
+      value={productCost}
+      onChange={(event) => setProductCost(Number(event.currentTarget.value))}
+    />
+  </Grid.Col>
+</Grid>
           <Button onClick={handleAddProductToReciept}>Add Product</Button>
           <Table>
             <thead>
@@ -388,7 +444,7 @@ const PurchaseOrders: React.FC = () => {
             </thead>
             <tbody>
               {
-              reciptEntries.map((entry: any, index: number) => (
+              reciptEntries.map((entry: any, index: number) => ( // eslint-disable-line
                 <tr key={index}>
                   <td>{entry.sku}</td>
                   <td>{entry.productName}</td>
@@ -403,7 +459,7 @@ const PurchaseOrders: React.FC = () => {
               ))}
             </tbody>
           </Table>
-          <Text>Total Cost: ${totalCost.toFixed(2)}</Text>
+          <Text>Total Cost: LKR {totalCost.toFixed(2)}</Text>
           <Button color="green"  onClick={handleSavePurchaseOrder}>Save Order</Button>
           <Button onClick={handlePrintPurchaseOrder}>Print Receipt</Button>
           <Button color="red" onClick={() =>{
@@ -460,9 +516,9 @@ const PurchaseOrders: React.FC = () => {
         
       </Modal>
 
-      <Table>
-        <thead>{headers}</thead>
-        <tbody>{rows}</tbody>
+      <Table striped highlightOnHover>
+      <Table.Thead>{headers}</Table.Thead>
+      <Table.Tbody>{rows}</Table.Tbody>
       </Table>
     </div>
   );

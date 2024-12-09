@@ -1,44 +1,44 @@
-import { Drawer, NavLink } from "@mantine/core";
+import { Drawer, NavLink } from "@mantine/core"; // eslint-disable-line
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconBox,
-  IconBuildingSkyscraper,
-  IconBusinessplan,
-  IconCashRegister,
+  IconBuildingSkyscraper, // eslint-disable-line
+  IconBusinessplan,// eslint-disable-line
+  IconCashRegister,// eslint-disable-line
   IconCategory2,
-  IconChevronRight,
+  IconChevronRight,// eslint-disable-line
   IconClipboardData,
-  IconCube,
+  IconCube,// eslint-disable-line
   IconDeviceDesktop,
-  IconFileCertificate,
+  IconFileCertificate,// eslint-disable-line
   IconFolders,
-  IconGauge,
-  IconHome2,
+  IconGauge,// eslint-disable-line
+  IconHome2,// eslint-disable-line
   IconSettings,
-  IconTxt,
+  IconTxt,// eslint-disable-line
   IconUserEdit,
   IconUsers,
-  IconUsersGroup,
-  IconUserSquareRounded,
+  IconUsersGroup,// eslint-disable-line
+  IconUserSquareRounded,// eslint-disable-line
   IconUserStar,
 } from "@tabler/icons-react";
 import React from "react";
 import { useLocation } from "react-router-dom";
 
 const Sidebar: React.FC = () => {
-  const [opened, { open, close }] = useDisclosure(true);
+  const [opened, { open, close }] = useDisclosure(true); // eslint-disable-line
   const location = useLocation();
   return (
     <div>
       <div
         style={{ backgroundColor: "#f8f9fa", width: "100%", height: "100vh" }}
       >
-        <NavLink
+        {/* <NavLink
           active={location.pathname == "/dashboard"}
           href="#required-for-focus"
           label="Dashboard"
           leftSection={<IconHome2 size="1rem" stroke={1.5} />}
-        />
+        /> */}
         <NavLink
           label="Inventory"
           childrenOffset={28}
@@ -53,12 +53,12 @@ const Sidebar: React.FC = () => {
             active={location.pathname == "/purchaseorders"}
             leftSection={<IconFolders size="1rem" stroke={1.5} />}
           />
-          <NavLink
+          {/* <NavLink
             label="Inventory"
             href="/inventory"
             active={location.pathname == "/inventory"}
             leftSection={<IconCashRegister size="1rem" stroke={1.5} />}
-          />
+          /> */}
           <NavLink
             label="Products"
             active={location.pathname == "/products"}
@@ -85,18 +85,18 @@ const Sidebar: React.FC = () => {
           active={location.pathname == "/customers"}
           leftSection={<IconUserStar size="1rem" stroke={1.5} />}
         />
-        <NavLink
+        {/* <NavLink
           href="/sales"
           label="Sales"
           leftSection={<IconBusinessplan size="1rem" stroke={1.5} />}
-        />
-        <NavLink
+        /> */}
+        {/* <NavLink
           label="Reports"
           childrenOffset={28}
           href="#required-for-focus"
           leftSection={<IconClipboardData size="1rem" stroke={1.5} />}
-        >
-          <NavLink
+        > */}
+          {/* <NavLink
             label="Sales Report"
             href="#required-for-focus"
             leftSection={<IconCashRegister size="1rem" stroke={1.5} />}
@@ -106,7 +106,7 @@ const Sidebar: React.FC = () => {
             href="#required-for-focus"
             leftSection={<IconBox size="1rem" stroke={1.5} />}
           />
-        </NavLink>
+        </NavLink> */}
         <NavLink
           label="Settings"
           childrenOffset={28}
@@ -118,7 +118,7 @@ const Sidebar: React.FC = () => {
             href="/users"
             leftSection={<IconUserEdit size="1rem" stroke={1.5} />}
           />
-          <NavLink
+          {/* <NavLink
             label="Roles & Permissions"
             href="/permissions"
             leftSection={<IconFileCertificate size="1rem" stroke={1.5} />}
@@ -138,7 +138,7 @@ const Sidebar: React.FC = () => {
             href="/codeformats"
             active={location.pathname == "/codeformats"}
             leftSection={<IconTxt size="1rem" stroke={1.5} />}
-          />
+          /> */}
         </NavLink>
 
         <NavLink
