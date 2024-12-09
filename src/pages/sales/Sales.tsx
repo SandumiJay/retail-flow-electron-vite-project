@@ -1,17 +1,17 @@
 import {
   Badge,
   Button,
-  FileInput,
+  FileInput, // eslint-disable-line
   Flex,
   Group,
   Image,
   Modal,
-  Select,
+  Select, // eslint-disable-line
   Table,
-  TextInput,
+  TextInput, // eslint-disable-line
 } from "@mantine/core";
 import React, { useEffect } from "react";
-import { useForm } from "@mantine/form";
+import { useForm } from "@mantine/form";// eslint-disable-line
 import axios from "axios";
 import API_ENPOINTS from "../../API";
 import { IconEdit, IconTrashX } from "@tabler/icons-react";
@@ -35,13 +35,13 @@ interface Category {
 
 const Sales: React.FC = () => {
   const [viewDelete, setViewDelete] = React.useState(false);
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null); // eslint-disable-line
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null); // eslint-disable-line
 
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
     null
   );
-  const [productCategories, setProductCategories] = React.useState<string[]>(
+  const [productCategories, setProductCategories] = React.useState<string[]>( // eslint-disable-line
     []
   );
   const [productTblRows, setProductTblRows] = React.useState<JSX.Element[]>([]);

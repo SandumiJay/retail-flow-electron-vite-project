@@ -1,5 +1,5 @@
-import { Badge, Button, Flex, Image, Modal, Table } from "@mantine/core";
-import { IconEdit, IconSquareRoundedPlus, IconTrashX } from "@tabler/icons-react";
+import { Badge, Button, Flex, Image, Modal, Table } from "@mantine/core"; // eslint-disable-line
+import { IconEdit, IconSquareRoundedPlus, IconTrashX } from "@tabler/icons-react"; // eslint-disable-line
 import axios from "axios";
 import React, { useEffect } from "react";
 import API_ENPOINTS from "../../API";
@@ -69,12 +69,19 @@ const Inventory: React.FC = () => {
             padding: "10px",
           }}
         >
-          <Button onClick={() => handleEditViewModal(product)}>
+          {product.intQty === 0 ? (
+            <Badge color="red">Out of Stock</Badge>
+          ) : product.intQty < 50 ? (
+            <Badge color="yellow">Low in Stock</Badge>
+          ) : (
+            <Badge color="green">In Stock</Badge>
+          )}
+          {/* <Button onClick={() => handleEditViewModal(product)}>
             <IconEdit />
           </Button>
           <Button color="red" onClick={() => hadleDeleteConfirm(product)}>
             <IconTrashX />
-          </Button>
+          </Button> */}
         </Table.Td>
       </Table.Tr>
     ));
@@ -90,7 +97,7 @@ const Inventory: React.FC = () => {
       <Table.Th style={{ textAlign: "right" }}>Available Quantity</Table.Th>
       <Table.Th style={{ textAlign: "right" }}>Cost Price</Table.Th>
       <Table.Th style={{ textAlign: "right" }}>Selling Price</Table.Th>
-      <Table.Th></Table.Th>
+      <Table.Th>Stock Status</Table.Th>
     </Table.Tr>
   );
   const loadProducts = async () => {
@@ -125,11 +132,11 @@ const Inventory: React.FC = () => {
       </Modal>
       <Flex justify="space-between" align="center">
         <h4>Inventory</h4>
-        <Button onClick={() => setViewAddItem(true)} color="green">
+        {/* <Button onClick={() => setViewAddItem(true)} color="green">
           {" "}
           <IconSquareRoundedPlus />
           New Purchase Order
-        </Button>
+        </Button> */}
       </Flex>
 
       <div>

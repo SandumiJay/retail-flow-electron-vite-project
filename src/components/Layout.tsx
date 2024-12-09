@@ -2,32 +2,41 @@ import {
   AppShell,
   Avatar,
   Box,
-  Burger,
+  Burger, // eslint-disable-line
   Button,
   Image,
   Menu,
   rem,
-  Text,
+  Text, // eslint-disable-line
 } from "@mantine/core";
-import React, { Children } from "react";
+import React, { Children } from "react"; // eslint-disable-line
 import Sidebar from "./sidebar";
-import { useLocation } from "react-router-dom";
+import { useLocation,useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
 import logo2 from "../assets/logo2.jpg";
 import {
-  IconArrowsLeftRight,
+  IconArrowsLeftRight, // eslint-disable-line
   IconMessageCircle,
-  IconPhoto,
-  IconSearch,
+  IconPhoto, // eslint-disable-line
+  IconSearch, // eslint-disable-line
   IconSettings,
   IconTrash,
 } from "@tabler/icons-react";
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const showSidebar = location.pathname !== "/"; // Show sidebar only if not on the login page
-  const [opened, { toggle }] = useDisclosure();
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
-  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+  const [opened, { toggle }] = useDisclosure(); // eslint-disable-line
+  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure(); // eslint-disable-line
+  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true); // eslint-disable-line
+
+  const handleSignOut = () => {
+    // Clear authentication tokens or user data
+    localStorage.clear(); // Example: clear tokens or user data stored in localStorage
+    sessionStorage.clear();
+    navigate("/");
+  };
+
   return (
     <>
       {showSidebar ? (
@@ -123,6 +132,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     leftSection={
                       <IconTrash style={{ width: rem(14), height: rem(14) }} />
                     }
+                    onClick={handleSignOut} 
                   >
                     Sign Out
                   </Menu.Item>
@@ -133,7 +143,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
           <AppShell.Navbar>{showSidebar && <Sidebar />}</AppShell.Navbar>
 
-          <AppShell.Main>{children}</AppShell.Main>
+          <AppShell.Main style={{ backgroundColor: "#fff" }}>{children}</AppShell.Main>
         </AppShell>
       ) : (
         <Box>{children}</Box>

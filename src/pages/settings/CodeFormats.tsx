@@ -1,13 +1,13 @@
 import {
-  Anchor,
+  // Anchor,
   Box,
   Button,
-  FileInput,
+  // FileInput,
   Flex,
   Group,
-  Image,
+  // Image,
   Modal,
-  Select,
+  // Select,
   Slider,
   Table,
   Text,
@@ -20,9 +20,9 @@ import API_ENPOINTS from "../../API";
 import {
   IconEdit,
   IconEditCircle,
-  IconSquareRounded,
-  IconSquareRoundedPlus,
-  IconTrashX,
+  // IconSquareRounded,
+  // IconSquareRoundedPlus,
+  // IconTrashX,
 } from "@tabler/icons-react";
 
 interface CodeFormats {
@@ -34,7 +34,7 @@ interface CodeFormats {
   Sample: string;
   nextValue: number;
 }
-
+ 
 const CodeFormatss: React.FC = () => {
   const [viewUpdate, setViewUpdate] = useState(false);
   const [value, setValue] = useState(4);
@@ -57,16 +57,16 @@ const CodeFormatss: React.FC = () => {
     },
   });
  
-  const handleUdate = async (values: any) => {
+  const handleUdate = async (values: any) => { // eslint-disable-line
     setCodeType(values.Code);
     setCodeTypeText(values.Type);
     setPrefix(values.PreFix);
     setCodeLength(values.length);
     setCodeSample(values.Sample);
     setViewUpdate(true);
-  };
+  }; 
 
-  const handleSampleCodeGen = (e: any) => {
+  const handleSampleCodeGen = (e: any) => {// eslint-disable-line
     console.log(e.target.value);
     const pre = e.target.value
     setPrefix(pre)
@@ -99,7 +99,7 @@ const CodeFormatss: React.FC = () => {
       setCodeSample(codeSample)
   }
 
-  const handleSaveCodeUpdate = async (values: any) => {
+  const handleSaveCodeUpdate = async (values: any) => { // eslint-disable-line
       try {
         await axios.post(API_ENPOINTS.UPDATE_CODE_FORMAT, {
           type: codeType,

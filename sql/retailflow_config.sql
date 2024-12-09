@@ -16,34 +16,25 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `suppliers`
+-- Table structure for table `config`
 --
 
-DROP TABLE IF EXISTS `suppliers`;
+DROP TABLE IF EXISTS `config`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `suppliers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `code` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `phone` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `address` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `city` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `country` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `status` int NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `config` (
+  `key` varchar(255) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `suppliers`
+-- Dumping data for table `config`
 --
 
-LOCK TABLES `suppliers` WRITE;
-/*!40000 ALTER TABLE `suppliers` DISABLE KEYS */;
-INSERT INTO `suppliers` VALUES (13,'SPX00072','Mike','mike@gmail.com','+9288323243','13,Temple Rode, Kaluthara','Kaluthara','Sri Lanka',0),(14,'SPX00076','Sam','sam@gk.com','083213213','jkdsld','dsas','Sri Lanka',0),(15,'SP00086','Test','asa@fbc.com','+7685757678','Test','Test','Sri Lanka',0),(16,'SP00087','asdsfd','hg@cgch.com','97898687','jhjkj','jhjkj','jhjkj',0),(17,'SP00096','Ann','ann@gmail.com','09122893457','124,ABX rd,NZ','Galle','Sri Lanka',0);
-/*!40000 ALTER TABLE `suppliers` ENABLE KEYS */;
+LOCK TABLES `config` WRITE;
+/*!40000 ALTER TABLE `config` DISABLE KEYS */;
+/*!40000 ALTER TABLE `config` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

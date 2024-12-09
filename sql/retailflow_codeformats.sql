@@ -40,7 +40,7 @@ CREATE TABLE `codeformats` (
 
 LOCK TABLES `codeformats` WRITE;
 /*!40000 ALTER TABLE `codeformats` DISABLE KEYS */;
-INSERT INTO `codeformats` VALUES (1,'1','Product Code','PRD',5,'PRD000001',14),(2,'2','Supplier Code','SPX',5,'SPX000001',72),(3,'3','Purchase Order Code','PO',5,'PO0001',1),(4,'4','Invoice Code','INV',5,'INV000001',1),(5,'5','Customer Code','CST',5,'CST0001',1);
+INSERT INTO `codeformats` VALUES (1,'1','Product Code','PRD',5,'PRD0001',22),(2,'2','Supplier Code','SP',5,'SP0001',97),(3,'3','Purchase Order Code','PO',5,'PO0001',1),(4,'4','Invoice Code','INV',5,'INV000001',1),(5,'5','Customer Code','CST',5,'CST0001',7);
 /*!40000 ALTER TABLE `codeformats` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-21  2:23:28
+-- Dump completed on 2024-11-16 17:24:06

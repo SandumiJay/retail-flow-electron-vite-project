@@ -31,7 +31,7 @@ interface Supplier {
 }
 const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
-  const [EntryCode, setEntryCode] = useState("");
+  const [EntryCode, setEntryCode] = useState(""); // eslint-disable-line
   const [viewEditItem, setViewEditItem] = React.useState(false);
   const [viewAddItem, setViewAddItem] = React.useState(false);
   const [viewDeleteItem, setViewDeleteItem] = React.useState(false);
@@ -129,7 +129,7 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
       </Table.Tr>
     ));
     setSupTblRows(rows);
-  }, [suppliers]);
+  }, [suppliers]); // eslint-disable-line
   useEffect(() => {
     loadSuppliers();
   }, []);
@@ -140,10 +140,9 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
   };
   const handleSupplierAdd = async (values: typeof form.values) => {
     console.log(values);
-    const { code, name, email, phone, address, city, country } = values;
+    const {  name, email, phone, address, city, country } = values;
     try {
       await axios.post(API_ENPOINTS.ADD_SUPPLIER, {
-        code: EntryCode,
         name,
         email,
         phone,
@@ -188,7 +187,7 @@ const handleDeleteConfirm = (supplier: Supplier) => () => {
 
   const handleSupplierDeleteProceed = async() => {
       try {
-        const response = await axios.post(API_ENPOINTS.DELETE_SUPPLIER ,{
+        const response = await axios.post(API_ENPOINTS.DELETE_SUPPLIER ,{ // eslint-disable-line
             supplier: editingSupplier
         });
 
